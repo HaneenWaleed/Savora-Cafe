@@ -1,7 +1,9 @@
 <?php
 
 namespace App\Providers;
-
+use App\Models\Beverage;
+use App\Models\FoodItem;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +21,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Relation::enforceMorphMap([
+            'food'     => FoodItem::class,
+            'beverage' => Beverage::class,
+        ]);
+
     }
 }
