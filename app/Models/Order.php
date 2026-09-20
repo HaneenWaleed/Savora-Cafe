@@ -4,15 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Order extends Model
 {
     use HasFactory;
-    // ...
-}
-class Order extends Model
-{
-    use HasFactory;
+
     protected $fillable = [
         'user_id',
         'total_price',
@@ -28,10 +25,28 @@ class Order extends Model
         ];
     }
 
-    // افتراض مني: العميل يلغي الأوردر وهو Pending بس (نعدله لو عندكم قاعدة تانية)
     public function canBeCancelled(): bool
     {
         return $this->status === 'pending';
+    }
+
+    // بتلغي الأوردر وترجّع الكميات للمخزون
+    public function cancel(): void
+    {
+        DB::transaction(function () {
+            foreach ($this->items()->get() as $item) {
+                $model = $item->orderable_type === 'food' ? FoodItem::class : Beverage::class;
+
+                $model::withTrashed()
+                    ->whereKey($item->orderable_id)
+                    ->increment('quantity', $item->quantity);
+            }
+
+            $this->update([
+                'status'         => 'cancelled',
+                'payment_status' => $this->payment_status === 'paid' ? 'refunded' : $this->payment_status,
+            ]);
+        });
     }
 
     public function user()

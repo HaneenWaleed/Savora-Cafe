@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+// use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+// use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CartItem extends Model
 {
-    use HasFactory, SoftDeletes;
+    // use HasFactory, SoftDeletes;
     protected $fillable = [
         'user_id',
         'purchasable_id',
@@ -22,7 +22,7 @@ class CartItem extends Model
     }
 
     public function purchasable()
-    {
-        return $this->morphTo();
-    }
+{
+    return $this->morphTo()->withTrashed();
+}
 }

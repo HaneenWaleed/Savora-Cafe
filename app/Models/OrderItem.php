@@ -32,6 +32,7 @@ class OrderItem extends Model
 
     public function orderable()
     {
-        return $this->morphTo();
+    return $this->morphTo()->withTrashed();
     }
+
 }
