@@ -3,6 +3,7 @@
 namespace App\Providers;
 use App\Models\Beverage;
 use App\Models\FoodItem;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\ServiceProvider;
 
@@ -24,6 +25,7 @@ class AppServiceProvider extends ServiceProvider
         Relation::enforceMorphMap([
             'food'     => FoodItem::class,
             'beverage' => Beverage::class,
+            'user' => User::class,
         ]);
 
     }
