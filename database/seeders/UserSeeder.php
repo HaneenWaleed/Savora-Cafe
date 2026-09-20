@@ -56,10 +56,5 @@ class UserSeeder extends Seeder
                 'disliked_ingredients' => ['mushroom'],
             ]
         );
-
-        // كام عميل عشان إحصائيات الأدمن
-        if (User::where('role', 'customer')->count() < 8) {
-            User::factory(5)->create();
-        }
     }
 }
