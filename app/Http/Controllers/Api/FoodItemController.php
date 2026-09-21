@@ -24,11 +24,8 @@ class FoodItemController extends Controller
             'per_page'     => ['nullable', 'integer', 'min:1', 'max:50'],
         ]);
 
-        // الأدمن (لو بعت token) يشوف كل الأصناف، والباقي يشوف المفعّلة بس
         $isAdmin = $request->user('sanctum')?->isAdmin() ?? false;
-
         $query = FoodItem::query()->with('category');
-
         if (! $isAdmin) {
             $query->where('status', true);
         }
@@ -49,7 +46,6 @@ class FoodItemController extends Controller
             ->when($request->filled('spicy_level'), fn ($q) => $q->where('spicy_level', $request->spicy_level))
             ->when($request->filled('ingredient'), fn ($q) => $q->whereJsonContains('ingredients', strtolower($request->ingredient)))
             ->when($request->boolean('available'), fn ($q) => $q->where('quantity', '>', 0));
-
         match ($request->get('sort')) {
             'price_asc'  => $query->orderBy('price'),
             'price_desc' => $query->orderByDesc('price'),
@@ -65,22 +61,18 @@ class FoodItemController extends Controller
     public function show(Request $request, FoodItem $foodItem)
     {
         $isAdmin = $request->user('sanctum')?->isAdmin() ?? false;
-
         abort_if(! $isAdmin && ! $foodItem->status, 404);
-
         return new FoodItemResource($foodItem->load('category'));
     }
 
     public function store(FoodItemRequest $request): JsonResponse
     {
         $data = $request->safe()->except('image');
-
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('menu', 'public');
         }
 
         $foodItem = FoodItem::create($data);
-
         return (new FoodItemResource($foodItem->load('category')))
             ->response()
             ->setStatusCode(201);
@@ -89,7 +81,6 @@ class FoodItemController extends Controller
     public function update(FoodItemRequest $request, FoodItem $foodItem)
     {
         $data = $request->safe()->except('image');
-
         if ($request->hasFile('image')) {
             if ($foodItem->image) {
                 Storage::disk('public')->delete($foodItem->image);

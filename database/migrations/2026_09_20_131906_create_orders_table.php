@@ -15,7 +15,7 @@ return new class extends Migration
             $table->enum('status', ['pending', 'preparing', 'ready', 'completed', 'cancelled'])->default('pending');
             $table->enum('payment_status', ['unpaid', 'paid', 'refunded'])->default('unpaid');
             $table->text('notes')->nullable();
-            $table->timestamps(); // created_at = تاريخ الأوردر
+            $table->timestamps();  
         });
     }
 

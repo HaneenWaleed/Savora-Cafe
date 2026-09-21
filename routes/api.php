@@ -1,13 +1,23 @@
 <?php
 
 use App\Http\Controllers\Api\Admin\AdminOrderController;
+use App\Http\Controllers\Api\Admin\AdminStatsController;
+use App\Http\Controllers\Api\Admin\AdminUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BeverageController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\FavoriteController;
 use App\Http\Controllers\Api\FoodItemController;
 use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\PreferenceController;
+use App\Http\Controllers\Api\ProfileController;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/', fn () => response()->json([
+    'app'     => 'Savora Cafe API',
+    'status'  => 'ok',
+]));
 
 // ---------- Auth ----------
 Route::prefix('auth')->group(function () {
@@ -20,19 +30,33 @@ Route::prefix('auth')->group(function () {
     });
 });
 
-// ---------- Menu: تصفح عام ----------
 Route::apiResource('categories', CategoryController::class)->only(['index', 'show']);
 Route::apiResource('food-items', FoodItemController::class)->only(['index', 'show']);
 Route::apiResource('beverages', BeverageController::class)->only(['index', 'show']);
 
-// ---------- Cart & Orders (مستخدم مسجّل) ----------
 Route::middleware('auth:sanctum')->group(function () {
+    // Profile & Preferences
+    Route::get('profile', [ProfileController::class, 'show']);
+    Route::put('profile', [ProfileController::class, 'update']);
+    Route::put('profile/password', [ProfileController::class, 'updatePassword']);
+    Route::get('profile/preferences', [PreferenceController::class, 'show']);
+    Route::put('profile/preferences', [PreferenceController::class, 'update']);
+
+    // Favorites
+    Route::get('favorites', [FavoriteController::class, 'index']);
+    Route::post('favorites', [FavoriteController::class, 'store']);
+    Route::delete('favorites/{type}/{id}', [FavoriteController::class, 'destroy'])
+        ->whereIn('type', ['food', 'beverage'])
+        ->whereNumber('id');
+
+    // Cart
     Route::get('cart', [CartController::class, 'index']);
     Route::delete('cart', [CartController::class, 'clear']);
     Route::post('cart/items', [CartController::class, 'store']);
     Route::patch('cart/items/{cartItem}', [CartController::class, 'update']);
     Route::delete('cart/items/{cartItem}', [CartController::class, 'destroy']);
 
+    // Orders
     Route::get('orders', [OrderController::class, 'index']);
     Route::post('orders', [OrderController::class, 'store']);
     Route::get('orders/{order}', [OrderController::class, 'show']);
@@ -41,15 +65,27 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // ---------- Admin ----------
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {
-    // Menu management
     Route::apiResource('categories', CategoryController::class)->except(['index', 'show']);
     Route::apiResource('food-items', FoodItemController::class)->except(['index', 'show']);
     Route::apiResource('beverages', BeverageController::class)->except(['index', 'show']);
 
-    // Orders management
     Route::prefix('admin')->group(function () {
+        // Orders
         Route::get('orders', [AdminOrderController::class, 'index']);
         Route::get('orders/{order}', [AdminOrderController::class, 'show']);
         Route::patch('orders/{order}/status', [AdminOrderController::class, 'updateStatus']);
+
+        // Users
+        Route::apiResource('users', AdminUserController::class);
+
+        // Statistics
+        Route::prefix('stats')->group(function () {
+            Route::get('overview', [AdminStatsController::class, 'overview']);
+            Route::get('top-items', [AdminStatsController::class, 'topItems']);
+            Route::get('categories', [AdminStatsController::class, 'categories']);
+            Route::get('never-ordered', [AdminStatsController::class, 'neverOrdered']);
+            Route::get('low-stock', [AdminStatsController::class, 'lowStock']);
+            Route::get('sales', [AdminStatsController::class, 'sales']);
+        });
     });
 });

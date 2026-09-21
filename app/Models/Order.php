@@ -30,7 +30,6 @@ class Order extends Model
         return $this->status === 'pending';
     }
 
-    // بتلغي الأوردر وترجّع الكميات للمخزون
     public function cancel(): void
     {
         DB::transaction(function () {
@@ -57,5 +56,10 @@ class Order extends Model
     public function items()
     {
         return $this->hasMany(OrderItem::class);
+    }
+    
+    public function scopeSales($query)
+    {
+        return $query->where('status', '!=', 'cancelled');
     }
 }

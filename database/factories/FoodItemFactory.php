@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 
 class FoodItemFactory extends Factory
 {
-    // الاسم => [category slug, الوصف, السعر, المكونات, السعرات, درجة الحرارة]
     protected const MENU = [
         'Pepperoni Pizza'       => ['pizza', 'Pizza with pepperoni slices and melted mozzarella.', 125, ['pepperoni', 'mozzarella', 'tomato sauce'], 800, 1],
         'Four Cheese Pizza'     => ['pizza', 'Mozzarella, cheddar, parmesan and blue cheese.', 135, ['mozzarella', 'cheddar', 'parmesan', 'blue cheese'], 830, 0],

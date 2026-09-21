@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 
 class AdminOrderController extends Controller
 {
-    // الحالات المسموح الانتقال ليها
+
     private const TRANSITIONS = [
         'pending'   => ['preparing', 'cancelled'],
         'preparing' => ['ready', 'cancelled'],
@@ -40,7 +40,6 @@ class AdminOrderController extends Controller
             ->latest()
             ->paginate($request->integer('per_page', 15))
             ->withQueryString();
-
         return OrderResource::collection($orders);
     }
 
@@ -55,12 +54,9 @@ class AdminOrderController extends Controller
             'status'         => ['required', 'in:pending,preparing,ready,completed,cancelled'],
             'payment_status' => ['sometimes', 'in:unpaid,paid,refunded'],
         ]);
-
         $newStatus = $data['status'];
-
         if ($newStatus !== $order->status) {
             $allowed = self::TRANSITIONS[$order->status] ?? [];
-
             if (! in_array($newStatus, $allowed, true)) {
                 return response()->json([
                     'message' => "Cannot change status from '{$order->status}' to '{$newStatus}'.",
@@ -68,7 +64,7 @@ class AdminOrderController extends Controller
             }
 
             if ($newStatus === 'cancelled') {
-                $order->cancel(); // بترجّع المخزون
+                $order->cancel();
             } else {
                 $order->update(['status' => $newStatus]);
             }

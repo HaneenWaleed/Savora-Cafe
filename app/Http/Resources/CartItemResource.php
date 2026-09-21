@@ -11,12 +11,10 @@ class CartItemResource extends JsonResource
     public function toArray(Request $request): array
     {
         $product = $this->purchasable;
-
         $available = $product
             && ! $product->trashed()
             && $product->status
             && $product->quantity >= $this->quantity;
-
         return [
             'id'           => $this->id,
             'type'         => $this->purchasable_type,

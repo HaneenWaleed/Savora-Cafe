@@ -16,7 +16,6 @@ class FoodItemRequest extends FormRequest
     public function rules(): array
     {
         $required = $this->isMethod('post') ? 'required' : 'sometimes';
-
         return [
             'category_id'      => [$required, Rule::exists('categories', 'id')->where('type', 'food')],
             'name'             => [$required, 'string', 'max:255'],

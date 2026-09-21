@@ -25,7 +25,7 @@ class UserSeeder extends Seeder
             ]
         );
 
-        // عميل تجريبي بتفضيلات جاهزة (لتجربة التوصيات بعدين)
+        
         $customer = User::updateOrCreate(
             ['email' => 'customer@cafeteria.test'],
             [

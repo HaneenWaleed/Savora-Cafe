@@ -14,8 +14,8 @@ return new class extends Migration
             $table->json('favorite_categories')->nullable();
             $table->json('favorite_food_types')->nullable();
             $table->json('favorite_beverages')->nullable();
-            $table->string('preferred_taste')->nullable(); // sweet, salty, sour...
-            $table->json('dietary_preferences')->nullable(); // vegetarian, low-carb...
+            $table->string('preferred_taste')->nullable();
+            $table->json('dietary_preferences')->nullable(); 
             $table->enum('price_preference', ['low', 'medium', 'high'])->nullable();
             $table->unsignedTinyInteger('spicy_level')->default(0);
             $table->json('favorite_ingredients')->nullable();

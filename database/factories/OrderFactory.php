@@ -16,9 +16,7 @@ class OrderFactory extends Factory
             'completed', 'completed', 'completed', 'completed',
             'pending', 'preparing', 'ready', 'cancelled',
         ]);
-
         $date = fake()->dateTimeBetween('-30 days', 'now');
-
         return [
             'user_id'        => User::where('role', 'customer')->inRandomOrder()->value('id') ?? User::factory(),
             'total_price'    => 0,
@@ -39,14 +37,11 @@ class OrderFactory extends Factory
         return $this->afterCreating(function (Order $order) {
             $foods  = FoodItem::inRandomOrder()->limit(fake()->numberBetween(1, 3))->get();
             $drinks = Beverage::inRandomOrder()->limit(fake()->numberBetween(0, 2))->get();
-
             $total = 0;
-
             foreach ($foods->concat($drinks) as $product) {
                 $quantity = fake()->numberBetween(1, 3);
                 $price    = (float) $product->price;
                 $subtotal = $price * $quantity;
-
                 $order->items()->create([
                     'orderable_type' => $product instanceof FoodItem ? 'food' : 'beverage',
                     'orderable_id'   => $product->id,
@@ -54,10 +49,8 @@ class OrderFactory extends Factory
                     'price'          => $price,
                     'subtotal'       => $subtotal,
                 ]);
-
                 $total += $subtotal;
             }
-
             $order->update(['total_price' => $total]);
         });
     }

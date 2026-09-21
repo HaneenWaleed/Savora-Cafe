@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('favorites', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->morphs('favorable'); // favorable_type + favorable_id
+            $table->morphs('favorable');  
             $table->timestamps();
 
             $table->unique(['user_id', 'favorable_type', 'favorable_id']);

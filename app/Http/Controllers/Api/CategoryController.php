@@ -15,13 +15,11 @@ class CategoryController extends Controller
     public function index(Request $request)
     {
         $request->validate(['type' => ['nullable', 'in:food,beverage']]);
-
         $categories = Category::query()
             ->withCount(['foodItems', 'beverages'])
             ->when($request->filled('type'), fn ($q) => $q->where('type', $request->type))
             ->orderBy('name')
             ->get();
-
         return CategoryResource::collection($categories);
     }
 
@@ -34,9 +32,7 @@ class CategoryController extends Controller
     {
         $data = $request->validated();
         $data['slug'] = Str::slug($data['name']);
-
         $category = Category::create($data);
-
         return (new CategoryResource($category))->response()->setStatusCode(201);
     }
 
@@ -44,9 +40,7 @@ class CategoryController extends Controller
     {
         $data = $request->validated();
         $data['slug'] = Str::slug($data['name']);
-
         $category->update($data);
-
         return new CategoryResource($category);
     }
 
@@ -54,15 +48,12 @@ class CategoryController extends Controller
     {
         $hasItems = $category->foodItems()->withTrashed()->exists()
             || $category->beverages()->withTrashed()->exists();
-
         if ($hasItems) {
             return response()->json([
                 'message' => 'Cannot delete a category that still has items.',
             ], 409);
         }
-
         $category->delete();
-
         return response()->json(['message' => 'Category deleted.']);
     }
 }
