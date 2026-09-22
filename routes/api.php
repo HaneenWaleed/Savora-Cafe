@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\FoodItemController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PreferenceController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\RecommendationController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => response()->json([
@@ -48,6 +49,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('favorites/{type}/{id}', [FavoriteController::class, 'destroy'])
         ->whereIn('type', ['food', 'beverage'])
         ->whereNumber('id');
+
+    // Recommendations
+    Route::get('recommendations', [RecommendationController::class, 'index']);
+    Route::get('food-items/{foodItem}/match', [RecommendationController::class, 'matchForFood']);
+    Route::get('beverages/{beverage}/match', [RecommendationController::class, 'matchForBeverage']);
 
     // Cart
     Route::get('cart', [CartController::class, 'index']);
@@ -87,5 +93,6 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
             Route::get('low-stock', [AdminStatsController::class, 'lowStock']);
             Route::get('sales', [AdminStatsController::class, 'sales']);
         });
+
     });
 });
