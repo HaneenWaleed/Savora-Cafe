@@ -1,0 +1,726 @@
+:root {
+    --savora-cream: #f3ebdd;
+    --savora-cream-light: #faf6ee;
+    --savora-tan: #c9a876;
+    --savora-terracotta: #c1502e;
+    --savora-terracotta-soft: #e8c8b7;
+    --savora-green: #46562f;
+    --savora-green-dark: #384526;
+    --savora-brown: #3b2a1e;
+    --savora-text: #3d3a34;
+    --savora-text-muted: #7a7468;
+    --savora-border: #e4dbc9;
+    --savora-card: #fffdf9;
+    --savora-shadow: rgba(59, 42, 30, 0.12);
+}
+
+.product-page {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 1.5rem 1.25rem 3rem;
+}
+
+.product-breadcrumb {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    color: var(--savora-text-muted);
+    font-size: 0.82rem;
+}
+
+.product-breadcrumb a,
+.product-breadcrumb span {
+    color: inherit;
+}
+
+.product-breadcrumb a {
+    color: var(--savora-green);
+    text-decoration: none;
+}
+
+.product-breadcrumb .current-page {
+    color: var(--savora-text);
+    font-weight: 600;
+}
+
+.product-shell {
+    background: rgba(255, 255, 255, 0.35);
+    border: 1px solid var(--savora-border);
+    border-radius: 26px;
+    box-shadow: 0 18px 40px var(--savora-shadow);
+    padding: 1.4rem;
+    display: grid;
+    grid-template-columns: 1.05fr 1fr;
+    gap: 2rem;
+}
+
+.product-gallery {
+    position: relative;
+}
+
+.gallery-main {
+    background: linear-gradient(135deg, #eadac3, #f8efe2);
+    border: 1px solid var(--savora-border);
+    border-radius: 22px;
+    overflow: hidden;
+    min-height: 410px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.gallery-main img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.gallery-thumbs {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.gallery-thumb {
+    border: 1px solid var(--savora-border);
+    border-radius: 14px;
+    padding: 0;
+    background: transparent;
+    overflow: hidden;
+    transition:
+        transform 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+    cursor: pointer;
+}
+
+.gallery-thumb.active {
+    border-color: var(--savora-terracotta);
+    box-shadow: 0 8px 18px rgba(193, 80, 46, 0.12);
+}
+
+.gallery-thumb:hover {
+    transform: translateY(-2px);
+}
+
+.gallery-thumb img {
+    display: block;
+    width: 100%;
+    height: 88px;
+    object-fit: cover;
+}
+
+.wishlist-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.85);
+    color: var(--savora-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 16px rgba(59, 42, 30, 0.08);
+    z-index: 3;
+}
+
+.wishlist-btn.active {
+    color: var(--savora-terracotta);
+}
+
+.product-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.product-header-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.85rem;
+}
+
+.product-header-row h1 {
+    font-size: clamp(2rem, 3vw, 3rem);
+    line-height: 1.08;
+    margin: 0;
+    color: var(--savora-brown);
+    font-family: "Playfair Display", serif;
+}
+
+.product-subtitle {
+    margin-top: 0.5rem;
+}
+
+.category-pill {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(70, 86, 47, 0.08);
+    color: var(--savora-green);
+    border: 1px solid rgba(70, 86, 47, 0.18);
+    border-radius: 999px;
+    padding: 0.45rem 0.8rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.match-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(70, 86, 47, 0.08);
+    color: var(--savora-green);
+    border-radius: 999px;
+    padding: 0.5rem 0.8rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.price-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 0.9rem 0 1rem;
+    flex-wrap: wrap;
+}
+
+.product-price {
+    font-size: clamp(2rem, 3vw, 2.5rem);
+    color: var(--savora-terracotta);
+    font-weight: 700;
+    line-height: 1;
+}
+
+.product-tags {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 999px;
+    padding: 0.4rem 0.7rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    border: 1px solid var(--savora-border);
+}
+
+.tag-terracotta {
+    background: rgba(193, 80, 46, 0.08);
+    color: var(--savora-terracotta);
+    border-color: rgba(193, 80, 46, 0.18);
+}
+
+.tag-green {
+    background: rgba(70, 86, 47, 0.08);
+    color: var(--savora-green);
+}
+
+.tag-warm {
+    background: rgba(201, 168, 118, 0.12);
+    color: var(--savora-brown);
+}
+
+.product-description {
+    margin: 0 0 1.2rem;
+    color: var(--savora-text-muted);
+    font-size: 0.97rem;
+    line-height: 1.7;
+    max-width: 62ch;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.8rem;
+    margin-bottom: 1.5rem;
+}
+
+.info-card {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid var(--savora-border);
+    border-radius: 14px;
+    padding: 0.7rem 0.8rem;
+}
+
+.info-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(193, 80, 46, 0.08);
+    color: var(--savora-terracotta);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.info-card small {
+    display: block;
+    color: var(--savora-text-muted);
+    margin-bottom: 0.15rem;
+}
+
+.info-card strong {
+    color: var(--savora-text);
+    font-size: 0.9rem;
+}
+
+.detail-section {
+    margin-bottom: 1.1rem;
+}
+
+.detail-section h3 {
+    margin: 0 0 0.7rem;
+    color: var(--savora-brown);
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.chip-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 0.8rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid var(--savora-border);
+    color: var(--savora-text);
+    font-size: 0.75rem;
+}
+
+.spice-row {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--savora-text-muted);
+}
+
+.spice-row i {
+    font-size: 1.05rem;
+    color: rgba(193, 80, 46, 0.25);
+}
+
+.spice-row i.active {
+    color: var(--savora-terracotta);
+}
+
+.spice-row span {
+    margin-left: 0.5rem;
+    color: var(--savora-text);
+    font-weight: 600;
+}
+
+.purchase-row {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    margin-top: 1rem;
+}
+
+.quantity-box {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--savora-border);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.55);
+    overflow: hidden;
+    min-width: 142px;
+}
+
+.quantity-box button {
+    width: 42px;
+    height: 46px;
+    border: none;
+    background: transparent;
+    color: var(--savora-text);
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.quantity-box span {
+    width: 58px;
+    text-align: center;
+    font-weight: 700;
+    color: var(--savora-brown);
+}
+
+.btn-add-cart {
+    flex: 1;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--savora-terracotta), #b95e45);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.96rem;
+    min-height: 46px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    box-shadow: 0 10px 20px rgba(193, 80, 46, 0.18);
+}
+
+.secondary-actions {
+    margin-top: 1rem;
+}
+
+.compare-button {
+    width: 100%;
+    border: 1px solid var(--savora-border);
+    background: rgba(255, 255, 255, 0.55);
+    color: var(--savora-text);
+    border-radius: 14px;
+    padding: 0.85rem 1rem;
+    font-weight: 600;
+}
+
+.feature-panel,
+.compare-panel,
+.similar-panel {
+    margin-top: 2rem;
+    background: rgba(255, 255, 255, 0.28);
+    border: 1px solid var(--savora-border);
+    border-radius: 26px;
+    padding: 1.4rem;
+}
+
+.feature-header,
+.compare-panel-header,
+.similar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.feature-header {
+    justify-content: flex-start;
+}
+
+.feature-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(201, 168, 118, 0.18);
+    color: var(--savora-terracotta);
+}
+
+.feature-header h2,
+.compare-panel-header h2,
+.similar-header h2 {
+    margin: 0;
+    color: var(--savora-brown);
+    font-size: clamp(1.4rem, 2vw, 2rem);
+    font-family: "Playfair Display", serif;
+}
+
+.feature-header p {
+    margin: 0.2rem 0 0;
+    color: var(--savora-text-muted);
+    font-size: 0.82rem;
+}
+
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.9rem;
+}
+
+.feature-item {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid var(--savora-border);
+    border-radius: 16px;
+    padding: 0.9rem 0.8rem;
+    color: var(--savora-text);
+}
+
+.feature-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.badge-green {
+    background: rgba(70, 86, 47, 0.08);
+    color: var(--savora-green);
+}
+
+.compare-select-wrap select {
+    border: 1px solid var(--savora-border);
+    background: #fff;
+    border-radius: 12px;
+    min-width: 220px;
+    padding: 0.8rem 1rem;
+    color: var(--savora-text);
+}
+
+.compare-content {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.compare-card {
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid var(--savora-border);
+    border-radius: 18px;
+    padding: 1rem;
+}
+
+.compare-identity {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+}
+
+.compare-identity img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 14px;
+}
+
+.compare-identity small {
+    display: block;
+    color: var(--savora-text-muted);
+    margin-bottom: 0.2rem;
+}
+
+.compare-identity h4 {
+    margin: 0;
+    color: var(--savora-brown);
+    font-size: 1rem;
+}
+
+.compare-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--savora-border);
+}
+
+.compare-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.compare-row span {
+    color: var(--savora-text-muted);
+}
+
+.compare-row strong {
+    display: inline-block;
+    text-align: right;
+    color: var(--savora-text);
+}
+
+.compare-empty {
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px dashed var(--savora-border);
+    border-radius: 16px;
+    padding: 1rem;
+    color: var(--savora-text-muted);
+    text-align: center;
+    grid-column: 1 / -1;
+}
+
+.compare-summary-box {
+    background: rgba(70, 86, 47, 0.05);
+    border: 1px solid rgba(70, 86, 47, 0.15);
+    border-radius: 16px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    grid-column: 1 / -1;
+}
+
+.compare-summary-box strong {
+    display: block;
+    margin-bottom: 0.35rem;
+    color: var(--savora-green);
+}
+
+.compare-summary-box p {
+    margin: 0;
+    color: var(--savora-text-muted);
+    line-height: 1.7;
+}
+
+.placeholder-hero {
+    width: 100%;
+    min-height: 410px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #eadac3 0%, #f7f1e8 100%);
+    color: var(--savora-green);
+    border-radius: 22px;
+    border: 1px solid var(--savora-border);
+}
+
+.placeholder-hero i {
+    font-size: 5rem;
+    opacity: 0.82;
+}
+
+.similar-header a {
+    color: var(--savora-green);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.similar-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.similar-card {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid var(--savora-border);
+    border-radius: 18px;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.similar-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px var(--savora-shadow);
+}
+
+.similar-image {
+    position: relative;
+    height: 170px;
+}
+
+.similar-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.similar-heart {
+    position: absolute;
+    right: 0.7rem;
+    top: 0.7rem;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.similar-body {
+    padding: 0.8rem 0.9rem 0.95rem;
+}
+
+.similar-body h3 {
+    margin: 0 0 0.6rem;
+    font-size: 1rem;
+    color: var(--savora-brown);
+}
+
+.similar-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--savora-terracotta);
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+@media (max-width: 991px) {
+    .product-shell {
+        grid-template-columns: 1fr;
+    }
+
+    .feature-grid,
+    .similar-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .product-page {
+        padding-left: 0.8rem;
+        padding-right: 0.8rem;
+    }
+
+    .product-shell,
+    .feature-panel,
+    .compare-panel,
+    .similar-panel {
+        padding: 1rem;
+    }
+
+    .feature-grid,
+    .similar-grid,
+    .compare-content,
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .product-header-row,
+    .price-row,
+    .feature-header,
+    .compare-panel-header,
+    .similar-header,
+    .purchase-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .purchase-row {
+        width: 100%;
+    }
+
+    .btn-add-cart,
+    .quantity-box {
+        width: 100%;
+    }
+
+    .compare-select-wrap select {
+        width: 100%;
+    }
+}

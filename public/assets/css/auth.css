@@ -1,0 +1,218 @@
+:root {
+    --savora-cream: #F3EBDD;
+    --savora-cream-light: #FAF6EE;
+    --savora-tan: #C9A876;
+    --savora-terracotta: #C1502E;
+    --savora-green: #46562F;
+    --savora-green-dark: #384526;
+    --savora-brown: #3B2A1E;
+    --savora-text: #3D3A34;
+    --savora-text-muted: #7A7468;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    color: var(--savora-text);
+}
+
+.brand-font {
+    font-family: 'Playfair Display', serif;
+}
+
+.auth-page {
+    min-height: 100vh;
+    display: flex;
+}
+
+.auth-hero {
+    position: relative;
+    flex: 1;
+    background-image: url('../images/auth-hero.png');
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 4rem;
+    color: #fff;
+}
+
+.auth-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, rgba(59, 42, 30, 0.65), rgba(59, 42, 30, 0.25));
+}
+
+.auth-hero > * {
+    position: relative;
+    z-index: 1;
+}
+
+.auth-hero .logo-icon {
+    width: 48px;
+    margin-bottom: 0.75rem;
+}
+
+.auth-hero .brand-title {
+    font-size: 3rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.auth-hero .brand-sub {
+    letter-spacing: 4px;
+    font-size: 0.85rem;
+    opacity: 0.9;
+    margin-bottom: 1.5rem;
+}
+
+.auth-hero .tagline {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.auth-form-side {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--savora-cream);
+    padding: 2rem;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 440px;
+    background: var(--savora-cream-light);
+    border-radius: 20px;
+    padding: 2.75rem;
+    box-shadow: 0 20px 50px rgba(59, 42, 30, 0.12);
+}
+
+.auth-card .logo-icon {
+    width: 40px;
+    margin-bottom: 0.5rem;
+}
+
+.auth-card .card-brand {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--savora-green);
+}
+
+.auth-card .card-brand-sub {
+    font-size: 0.7rem;
+    letter-spacing: 3px;
+    color: var(--savora-text-muted);
+    margin-bottom: 1.5rem;
+}
+
+.auth-card h2 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    color: var(--savora-brown);
+}
+
+.auth-card .subtitle {
+    color: var(--savora-text-muted);
+    font-size: 0.92rem;
+    margin-bottom: 1.75rem;
+}
+
+.form-label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--savora-text);
+}
+
+.input-icon-group {
+    position: relative;
+}
+
+.input-icon-group .form-control {
+    padding-left: 2.75rem;
+    background: #fff;
+    border: 1px solid #E4DBC9;
+    border-radius: 10px;
+    height: 48px;
+}
+
+.input-icon-group .form-control:focus {
+    border-color: var(--savora-green);
+    box-shadow: 0 0 0 0.2rem rgba(70, 86, 47, 0.15);
+}
+
+.input-icon-group .icon-left {
+    position: absolute;
+    left: 0.9rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--savora-text-muted);
+}
+
+.input-icon-group .icon-toggle {
+    position: absolute;
+    right: 0.9rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--savora-text-muted);
+    cursor: pointer;
+    background: none;
+    border: none;
+}
+
+.btn-savora {
+    background: var(--savora-green);
+    border: none;
+    color: #fff;
+    border-radius: 999px;
+    height: 48px;
+    font-weight: 600;
+    transition: background 0.2s ease;
+}
+
+.btn-savora:hover,
+.btn-savora:focus {
+    background: var(--savora-green-dark);
+    color: #fff;
+}
+
+.btn-savora .spinner-border {
+    width: 1rem;
+    height: 1rem;
+}
+
+.auth-errors {
+    font-size: 0.85rem;
+}
+
+.auth-errors .error-item {
+    color: var(--savora-terracotta);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.35rem;
+}
+
+.auth-links {
+    border-top: 1px solid #E4DBC9;
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    font-size: 0.9rem;
+}
+
+.auth-links a {
+    color: var(--savora-green);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.auth-links a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 991.98px) {
+    .auth-hero { display: none; }
+    .auth-form-side { flex: 1; }
+}

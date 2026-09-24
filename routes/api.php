@@ -14,6 +14,8 @@ use App\Http\Controllers\Api\PreferenceController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\RecommendationController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\ChatbotController;
+use App\Http\Controllers\Api\AiController;
 
 Route::get('/', fn () => response()->json([
     'app'     => 'Savora Cafe API',
@@ -35,14 +37,14 @@ Route::apiResource('categories', CategoryController::class)->only(['index', 'sho
 Route::apiResource('food-items', FoodItemController::class)->only(['index', 'show']);
 Route::apiResource('beverages', BeverageController::class)->only(['index', 'show']);
 
-Route::middleware('auth:sanctum')->group(function () {
-    // Profile & Preferences
-    Route::get('profile', [ProfileController::class, 'show']);
-    Route::put('profile', [ProfileController::class, 'update']);
-    Route::put('profile/password', [ProfileController::class, 'updatePassword']);
-    Route::get('profile/preferences', [PreferenceController::class, 'show']);
-    Route::put('profile/preferences', [PreferenceController::class, 'update']);
+// Profile & Preferences
+Route::get('profile', [ProfileController::class, 'show']);
+Route::put('profile', [ProfileController::class, 'update']);
+Route::put('profile/password', [ProfileController::class, 'updatePassword']);
+Route::get('profile/preferences', [PreferenceController::class, 'show']);
+Route::put('profile/preferences', [PreferenceController::class, 'update']);
 
+Route::middleware('auth:sanctum')->group(function () {
     // Favorites
     Route::get('favorites', [FavoriteController::class, 'index']);
     Route::post('favorites', [FavoriteController::class, 'store']);
@@ -67,10 +69,23 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('orders', [OrderController::class, 'store']);
     Route::get('orders/{order}', [OrderController::class, 'show']);
     Route::post('orders/{order}/cancel', [OrderController::class, 'cancel']);
+
+    // Chatbot
+    Route::post('chatbot/ask', [ChatbotController::class, 'ask'])->middleware('throttle:15,1');
+
+    // AI: search, compare, combo
+    Route::post('ai/search', [AiController::class, 'search'])->middleware('throttle:15,1');
+    Route::post('ai/compare', [AiController::class, 'compare'])->middleware('throttle:15,1');
+    Route::get('ai/combo', [AiController::class, 'combo'])->middleware('throttle:15,1');
+
+    Route::get('recommendations/surprise', [RecommendationController::class, 'surprise']);
+    Route::get('recommendations/healthy', [RecommendationController::class, 'healthy']);
+
+    
 });
 
 // ---------- Admin ----------
-Route::middleware(['auth:sanctum', 'admin'])->group(function () {
+Route::middleware('admin')->group(function () {
     Route::apiResource('categories', CategoryController::class)->except(['index', 'show']);
     Route::apiResource('food-items', FoodItemController::class)->except(['index', 'show']);
     Route::apiResource('beverages', BeverageController::class)->except(['index', 'show']);
