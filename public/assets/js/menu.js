@@ -18,8 +18,6 @@ const state = {
     itemsByKey: {},
 };
 
-const API_BASE = '/api';
-
 const PLACEHOLDER_ICON = { food: 'bi-egg-fried', beverage: 'bi-cup-straw' };
 const CATEGORY_ICONS = {
     pizza: 'bi-circle', burgers: 'bi-basket', sandwiches: 'bi-basket2',
@@ -27,63 +25,6 @@ const CATEGORY_ICONS = {
     juices: 'bi-cup-straw', 'soft-drinks': 'bi-cup', 'hot-drinks': 'bi-cup-hot-fill',
     'cold-drinks': 'bi-snow2',
 };
-
-function getToken() {
-    return localStorage.getItem('savora_token') || '';
-}
-
-function authHeaders(json = true) {
-    const headers = { Accept: 'application/json' };
-    if (json) headers['Content-Type'] = 'application/json';
-    if (getToken()) headers['Authorization'] = `Bearer ${getToken()}`;
-    return headers;
-}
-
-function isLoggedIn() {
-    return !!getToken();
-}
-
-function requireLogin(redirectTo = '/login') {
-    showToast('Please log in to continue.');
-    setTimeout(() => {
-        window.location.href = redirectTo;
-    }, 800);
-}
-
-function showToast(message) {
-    let toast = document.querySelector('.savora-toast');
-    if (!toast) {
-        toast = document.createElement('div');
-        toast.className = 'savora-toast';
-        document.body.appendChild(toast);
-    }
-    toast.textContent = message;
-    requestAnimationFrame(() => toast.classList.add('show'));
-    setTimeout(() => toast.classList.remove('show'), 2500);
-}
-
-function refreshHeader() {
-    const cartBadge = document.getElementById('cartBadge');
-    if (!cartBadge) return;
-
-    if (!isLoggedIn()) {
-        cartBadge.classList.add('d-none');
-        return;
-    }
-
-    fetch(`${API_BASE}/cart`, { headers: authHeaders() })
-        .then(res => res.json())
-        .then(data => {
-            const count = Array.isArray(data.data) ? data.data.reduce((sum, item) => sum + (item.quantity || 0), 0) : 0;
-            cartBadge.textContent = String(count);
-            if (count > 0) {
-                cartBadge.classList.remove('d-none');
-            } else {
-                cartBadge.classList.add('d-none');
-            }
-        })
-        .catch(() => cartBadge.classList.add('d-none'));
-}
 
 function itemKey(item) { return `${item.type}_${item.id}`; }
 
@@ -98,18 +39,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadCategories() {
-<<<<<<< HEAD
     try {
         const response = await fetch(`${API_BASE}/categories`);
         const data = response.ok ? await response.json() : { data: [] };
         const categories = Array.isArray(data.data) ? data.data : [];
         state.categories = categories;
-=======
-    const response = await fetch('/api/categories');
-    const payload = await response.json();
-    const categories = payload.data || [];
-    state.categories = categories;
->>>>>>> b847e07 (admin dashboard)
 
         const wrap = document.getElementById('categoryTabs');
         wrap.innerHTML = '';
@@ -151,7 +85,6 @@ function selectCategory(id, btnEl) {
 
 async function loadFavorites() {
     if (!isLoggedIn()) return;
-<<<<<<< HEAD
     try {
         const response = await fetch(`${API_BASE}/favorites`, { headers: authHeaders() });
         const data = response.ok ? await response.json() : { data: [] };
@@ -161,11 +94,6 @@ async function loadFavorites() {
         console.error('Failed to load favorites:', error);
         state.favoritesSet = new Set();
     }
-=======
-    const response = await fetch('/api/favorites', { headers: authHeaders(false) });
-    const payload = await response.json();
-    state.favoritesSet = new Set((payload.data || []).map((fav) => `${fav.type}_${Number(fav.item?.id)}`));
->>>>>>> b847e07 (admin dashboard)
 }
 
 
@@ -182,54 +110,6 @@ async function toggleFavorite(type, id, btnEl) {
     btnEl.classList.add('pulse');
     setTimeout(() => btnEl.classList.remove('pulse'), 350);
 
-<<<<<<< HEAD
-    try {
-        const response = await fetch(`${API_BASE}/favorites`, {
-            method: isActive ? 'DELETE' : 'POST',
-            headers: authHeaders(),
-            body: JSON.stringify({ type, id }),
-        });
-
-        if (!response.ok) {
-            const data = await response.json();
-            showToast(data.message || 'Could not update favorites.');
-            return;
-        }
-
-        if (isActive) {
-            state.favoritesSet.delete(key);
-            btnEl.classList.remove('active');
-            const icon = btnEl.querySelector('i');
-            if (icon) icon.className = 'bi bi-heart';
-            showToast('Removed from favorites');
-        } else {
-            state.favoritesSet.add(key);
-            btnEl.classList.add('active');
-            const icon = btnEl.querySelector('i');
-            if (icon) icon.className = 'bi bi-heart-fill';
-            showToast('Added to favorites');
-        }
-    } catch (error) {
-        console.error('Failed to toggle favorite:', error);
-        showToast('Could not update favorites.');
-    }
-}
-
-async function loadCart() {
-    if (!isLoggedIn()) return;
-    state.cartMap = {};
-    try {
-        const response = await fetch(`${API_BASE}/cart`, { headers: authHeaders() });
-        const data = response.ok ? await response.json() : { data: [] };
-        const cartItems = Array.isArray(data.data) ? data.data : [];
-        cartItems.forEach((item) => {
-            const key = `${item.purchasable_type}_${Number(item.purchasable_id)}`;
-            state.cartMap[key] = { quantity: Number(item.quantity || 1) };
-        });
-    } catch (error) {
-        console.error('Failed to load cart:', error);
-    }
-=======
     const response = await fetch(isActive ? `/api/favorites/${type}/${id}` : '/api/favorites', {
         method: isActive ? 'DELETE' : 'POST',
         headers: authHeaders(!isActive),
@@ -255,7 +135,6 @@ async function loadCart() {
     (payload.items || []).forEach((item) => {
         state.cartMap[`${item.type}_${Number(item.product?.id)}`] = { id: item.id, quantity: Number(item.quantity || 1) };
     });
->>>>>>> b847e07 (admin dashboard)
 }
 
 async function addToCart(type, id) {
@@ -264,29 +143,6 @@ async function addToCart(type, id) {
         return;
     }
 
-<<<<<<< HEAD
-    try {
-        const response = await fetch(`${API_BASE}/cart/items`, {
-            method: 'POST',
-            headers: authHeaders(),
-            body: JSON.stringify({ type, id, quantity: 1 }),
-        });
-
-        if (!response.ok) {
-            const data = await response.json();
-            showToast(data.message || 'Could not add to cart.');
-            return;
-        }
-
-        await loadCart();
-        refreshHeader();
-        updateCardFooterByKey(`${type}_${id}`);
-        showToast('Added to cart');
-    } catch (error) {
-        console.error('Failed to add to cart:', error);
-        showToast('Could not add to cart.');
-    }
-=======
     const product = state.itemsByKey[`${type}_${id}`];
     if (!product) return;
 
@@ -303,7 +159,6 @@ async function addToCart(type, id) {
     refreshHeader();
     updateCardFooterByKey(`${type}_${id}`);
     showToast(`${product.name} added to cart.`);
->>>>>>> b847e07 (admin dashboard)
 }
 
 async function changeQuantity(type, id, delta) {
@@ -313,25 +168,6 @@ async function changeQuantity(type, id, delta) {
 
     const nextQty = Number(entry.quantity || 1) + Number(delta || 0);
 
-<<<<<<< HEAD
-    try {
-        if (nextQty <= 0) {
-            const response = await fetch(`${API_BASE}/cart/items/${key}`, {
-                method: 'DELETE',
-                headers: authHeaders(),
-            });
-            if (!response.ok) throw new Error('Failed to remove item');
-            delete state.cartMap[key];
-        } else {
-            const response = await fetch(`${API_BASE}/cart/items/${key}`, {
-                method: 'PATCH',
-                headers: authHeaders(),
-                body: JSON.stringify({ quantity: nextQty }),
-            });
-            if (!response.ok) throw new Error('Failed to update quantity');
-            state.cartMap[key].quantity = nextQty;
-        }
-=======
     if (nextQty <= 0) {
         await fetch(`/api/cart/items/${entry.id}`, { method: 'DELETE', headers: authHeaders(false) });
         delete state.cartMap[key];
@@ -347,14 +183,8 @@ async function changeQuantity(type, id, delta) {
         }
         state.cartMap[key].quantity = nextQty;
     }
->>>>>>> b847e07 (admin dashboard)
-
-        refreshHeader();
-        updateCardFooterByKey(key);
-    } catch (error) {
-        console.error('Failed to change quantity:', error);
-        showToast('Could not update cart.');
-    }
+    refreshHeader();
+    updateCardFooterByKey(key);
 }
 
 function updateCardFooterByKey(key) {
@@ -369,7 +199,6 @@ function updateCardFooterByKey(key) {
 }
 
 async function loadRecommendations() {
-<<<<<<< HEAD
     if (!isLoggedIn()) return;
     try {
         const response = await fetch(`${API_BASE}/recommendations`, { headers: authHeaders() });
@@ -383,13 +212,6 @@ async function loadRecommendations() {
             state.matchMap[`${item.type}_${item.id}`] = matchPercentage;
             return { item, match_percentage: matchPercentage };
         });
-=======
-    const response = await fetch('/api/recommendations?limit=10', { headers: authHeaders(false) });
-    if (!response.ok) return;
-    const payload = await response.json();
-    const list = payload.data || [];
->>>>>>> b847e07 (admin dashboard)
-
         const section = document.getElementById('recommendedSection');
         if (section && list.length) section.classList.remove('d-none');
         if (list.length) renderRecommendedList(list);
@@ -577,14 +399,6 @@ function debounce(fn, delay) {
 
 async function loadMenu() {
     document.getElementById('resultsCount').textContent = 'Loading...';
-
-<<<<<<< HEAD
-    try {
-        const [foodResponse, beverageResponse] = await Promise.all([
-            fetch(`${API_BASE}/food-items`),
-            fetch(`${API_BASE}/beverages`),
-        ]);
-=======
     const query = new URLSearchParams({
         per_page: '50',
         sort: state.sort === 'match_desc' ? 'newest' : state.sort,
@@ -602,18 +416,6 @@ async function loadMenu() {
     const items = (await Promise.all(endpoints.map((endpoint) => fetchAllPages(endpoint))))
         .flat();
     let merged = [...items];
->>>>>>> b847e07 (admin dashboard)
-
-        const foodData = foodResponse.ok ? await foodResponse.json() : { data: [] };
-        const beverageData = beverageResponse.ok ? await beverageResponse.json() : { data: [] };
-
-        const foodItems = Array.isArray(foodData.data) ? foodData.data : [];
-        const beverages = Array.isArray(beverageData.data) ? beverageData.data : [];
-
-        let merged = [
-            ...foodItems.map((item) => ({ ...item, type: 'food', is_available: item.status })),
-            ...beverages.map((item) => ({ ...item, type: 'beverage', is_available: item.status })),
-        ];
 
         if (state.type) merged = merged.filter((item) => item.type === state.type);
         if (state.categoryId) merged = merged.filter((item) => Number(item.category?.id) === Number(state.categoryId));
@@ -648,14 +450,8 @@ async function loadMenu() {
             merged.sort((a, b) => b.price - a.price);
         }
 
-        state.allItems = merged;
-        renderGrid();
-    } catch (error) {
-        console.error('Failed to load menu:', error);
-        document.getElementById('resultsCount').textContent = 'Error loading menu';
-        state.allItems = [];
-        renderGrid();
-    }
+    state.allItems = merged;
+    renderGrid();
 }
 
 async function fetchAllPages(endpoint) {

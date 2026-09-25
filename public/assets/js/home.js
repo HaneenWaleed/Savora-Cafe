@@ -1,5 +1,3 @@
-const API_BASE = '/api';
-
 const CATEGORY_ICONS = {
     pizza: 'bi-circle',
     burgers: 'bi-basket',
@@ -13,68 +11,6 @@ const CATEGORY_ICONS = {
     'cold-drinks': 'bi-snow2',
 };
 
-<<<<<<< HEAD
-function getToken() {
-    return localStorage.getItem('savora_token') || '';
-}
-
-function authHeaders(json = true) {
-    const headers = { Accept: 'application/json' };
-    if (json) headers['Content-Type'] = 'application/json';
-    if (getToken()) headers['Authorization'] = `Bearer ${getToken()}`;
-    return headers;
-}
-
-function isLoggedIn() {
-    return !!getToken();
-}
-
-function requireLogin(redirectTo = '/login') {
-    showToast('Please log in to continue.');
-    setTimeout(() => {
-        window.location.href = redirectTo;
-    }, 800);
-}
-
-function showToast(message) {
-    let toast = document.querySelector('.savora-toast');
-    if (!toast) {
-        toast = document.createElement('div');
-        toast.className = 'savora-toast';
-        document.body.appendChild(toast);
-    }
-    toast.textContent = message;
-    requestAnimationFrame(() => toast.classList.add('show'));
-    setTimeout(() => toast.classList.remove('show'), 2500);
-}
-
-function refreshHeader() {
-    const cartBadge = document.getElementById('cartBadge');
-    if (!cartBadge) return;
-
-    if (!isLoggedIn()) {
-        cartBadge.classList.add('d-none');
-        return;
-    }
-
-    fetch(`${API_BASE}/cart`, { headers: authHeaders() })
-        .then(res => res.json())
-        .then(data => {
-            const count = Array.isArray(data.data) ? data.data.reduce((sum, item) => sum + (item.quantity || 0), 0) : 0;
-            cartBadge.textContent = String(count);
-            if (count > 0) {
-                cartBadge.classList.remove('d-none');
-            } else {
-                cartBadge.classList.add('d-none');
-            }
-        })
-        .catch(() => cartBadge.classList.add('d-none'));
-}
-
-
-
-=======
->>>>>>> b847e07 (admin dashboard)
 document.addEventListener('DOMContentLoaded', async () => {
     const categoryGrid = document.getElementById('homeCategoryGrid');
     const featuredGrid = document.getElementById('featuredGrid');
@@ -90,80 +26,39 @@ document.addEventListener('DOMContentLoaded', async () => {
         const { categories, items } = await loadHomeData();
 
         renderCategories(categories);
-<<<<<<< HEAD
-        renderHeroSlider(items.length ? items : []);
-=======
         renderHeroSlider(items);
->>>>>>> b847e07 (admin dashboard)
         renderFeatured(items);
         renderRecommendations(items);
         renderStats(categories, items);
     } catch (error) {
-        renderCategories([]);
-        renderHeroSlider([]);
-        renderFeatured([]);
-        renderRecommendations([]);
-        renderStats([], []);
+        return;
     }
 
     bindHeroSlider();
-    await loadFavoriteStates();
 });
 
-async function loadFavoriteStates() {
-    if (!isLoggedIn()) return;
-    const response = await fetch(`${API_BASE}/favorites`, { headers: authHeaders(false) });
-    if (!response.ok) return;
-    const payload = await response.json();
-    const favoriteKeys = new Set((payload.data || []).map((favorite) => `${favorite.type}_${favorite.item?.id}`));
-    document.querySelectorAll('[data-favorite]').forEach((button) => {
-        const key = `${button.dataset.favorite}_${button.dataset.id}`;
-        const active = favoriteKeys.has(key);
-        button.classList.toggle('active', active);
-        const icon = button.querySelector('i');
-        if (icon) icon.className = `bi ${active ? 'bi-heart-fill' : 'bi-heart'}`;
-    });
-}
-
 async function loadHomeData() {
-    try {
-        const [categoriesResponse, foodResponse, beverageResponse] = await Promise.all([
-            fetch(`${API_BASE}/categories`),
-            fetch(`${API_BASE}/food-items?per_page=8`),
-            fetch(`${API_BASE}/beverages?per_page=8`),
-        ]);
-
-        const categoriesData = categoriesResponse.ok ? await categoriesResponse.json() : { data: [] };
-        const foodData = foodResponse.ok ? await foodResponse.json() : { data: [] };
-        const beverageData = beverageResponse.ok ? await beverageResponse.json() : { data: [] };
-
-        const categories = Array.isArray(categoriesData.data) ? categoriesData.data : [];
-        const foodItems = Array.isArray(foodData.data) ? foodData.data : [];
-        const beverages = Array.isArray(beverageData.data) ? beverageData.data : [];
-        const items = [...foodItems.map(item => ({ ...item, type: 'food' })), ...beverages.map(item => ({ ...item, type: 'beverage' }))].sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0));
-
-        return {
-            categories: categories.slice(0, 8),
-            items: items.slice(0, 8),
-        };
-    } catch (error) {
-        console.error('Failed to load home data:', error);
-        return {
-            categories: [],
-            items: [],
-        };
-    }
+    const [categoriesResponse, foodResponse, beverageResponse] = await Promise.all([
+        fetch(`${API_BASE}/categories`),
+        fetch(`${API_BASE}/food-items?per_page=8&sort=newest`),
+        fetch(`${API_BASE}/beverages?per_page=8&sort=newest`),
+    ]);
+    const categoriesData = categoriesResponse.ok ? await categoriesResponse.json() : { data: [] };
+    const foodData = foodResponse.ok ? await foodResponse.json() : { data: [] };
+    const beverageData = beverageResponse.ok ? await beverageResponse.json() : { data: [] };
+    const categories = Array.isArray(categoriesData.data) ? categoriesData.data : [];
+    const food = Array.isArray(foodData.data) ? foodData.data.map((item) => ({ ...item, type: 'food' })) : [];
+    const beverages = Array.isArray(beverageData.data) ? beverageData.data.map((item) => ({ ...item, type: 'beverage' })) : [];
+    return { categories: categories.slice(0, 8), items: [...food, ...beverages].slice(0, 8) };
 }
 
 function renderCategories(categories) {
     const grid = document.getElementById('homeCategoryGrid');
     if (!grid) return;
-
     if (!categories.length) {
         grid.innerHTML = '<div class="empty-state">No categories available</div>';
         return;
     }
-
     grid.innerHTML = categories.map((category) => {
         const slug = category.slug || category.name.toLowerCase().replace(/\s+/g, '-');
         const iconName = CATEGORY_ICONS[slug] || 'bi-grid';
