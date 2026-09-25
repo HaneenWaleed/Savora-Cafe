@@ -78,23 +78,32 @@
                     return;
                 }
 
-                const store = window.SavoraMockStore;
-                const user = store.loginMockUser({ email, password });
+                fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password }),
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.token && data.user) {
+                            localStorage.setItem('savora_token', data.token);
+                            localStorage.setItem('savora_user', JSON.stringify(data.user));
 
-                if (user) {
-                    document.cookie = `savora_user_email=${encodeURIComponent(user.email)}; path=/; max-age=86400`;
-                    document.cookie = `savora_user_role=${encodeURIComponent(user.role || 'customer')}; path=/; max-age=86400`;
-
-                    if (user.role === 'admin') {
-                        window.location.href = '/admin?user_email=' + encodeURIComponent(user.email);
-                    } else {
-                        window.location.href = '/profile';
-                    }
-                    return;
-                }
-
-                showAlert(errorsBox, 'danger', 'Invalid email or password.');
-                setLoading(button, false);
+                            if (data.user.role === 'admin') {
+                                window.location.href = '/admin';
+                            } else {
+                                window.location.href = '/profile';
+                            }
+                        } else {
+                            showAlert(errorsBox, 'danger', data.message || 'Invalid email or password.');
+                            setLoading(button, false);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Login error:', error);
+                        showAlert(errorsBox, 'danger', 'Unable to connect to the server.');
+                        setLoading(button, false);
+                    });
             });
         }
 
@@ -128,39 +137,35 @@
                     return;
                 }
 
-                const existingUser = window.SavoraMockStore.getUsers().find((user) => user.email.toLowerCase() === email);
-                if (existingUser) {
-                    showAlert(errorsBox, 'danger', 'An account with this email already exists.');
-                    setLoading(button, false);
-                    return;
-                }
-
                 if (password !== passwordConfirmation) {
                     showAlert(errorsBox, 'danger', 'Passwords do not match.');
                     setLoading(button, false);
                     return;
                 }
 
-                const result = window.SavoraMockStore.registerMockUser({
-                    name,
-                    email,
-                    phone,
-                    age,
-                    password,
-                    role: 'customer',
-                });
-
-                if (!result.ok) {
-                    showAlert(errorsBox, 'danger', result.message || 'Unable to create your account.');
-                    setLoading(button, false);
-                    return;
-                }
-
-                showAlert(errorsBox, 'success', 'Account created successfully. Redirecting to login...');
-                setLoading(button, false);
-                setTimeout(() => {
-                    window.location.href = '/login';
-                }, 900);
+                fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, phone, age, password, password_confirmation: passwordConfirmation }),
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.user) {
+                            showAlert(errorsBox, 'success', 'Account created successfully. Redirecting to login...');
+                            setLoading(button, false);
+                            setTimeout(() => {
+                                window.location.href = '/login';
+                            }, 900);
+                        } else {
+                            showAlert(errorsBox, 'danger', data.message || 'Unable to create your account.');
+                            setLoading(button, false);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Registration error:', error);
+                        showAlert(errorsBox, 'danger', 'Unable to connect to the server.');
+                        setLoading(button, false);
+                    });
             });
         }
     }

@@ -1,24 +1,16 @@
 const API_BASE = '/api';
 
-function getMockStore() {
-    return window.SavoraMockStore || null;
-}
-
 function getToken() {
-    return localStorage.getItem('savora_token') || (getMockStore() && getMockStore().getCurrentUser() ? 'mock-token' : '');
+    return localStorage.getItem('savora_token') || '';
 }
 
 function getUser() {
-    if (getMockStore()) {
-        return getMockStore().getCurrentUser();
-    }
-
     const raw = localStorage.getItem('savora_user');
     return raw ? JSON.parse(raw) : null;
 }
 
 function isLoggedIn() {
-    return !!getUser() && !!getToken();
+    return !!getToken();
 }
 
 function authHeaders(json = true) {
@@ -32,9 +24,9 @@ function authHeaders(json = true) {
 
 async function fetchDashboardData() {
     const user = getUser();
-    const store = getMockStore();
+    const token = getToken();
 
-    if (!store || !user) {
+    if (!token || !user) {
         return {
             authenticated: false,
             user: null,
@@ -44,119 +36,48 @@ async function fetchDashboardData() {
         };
     }
 
-    const cartItems = store.getCart();
-    const favorites = store.getFavorites();
-    const orders = store.getOrders();
+    try {
+        const [cartResponse, favoritesResponse, ordersResponse] = await Promise.all([
+            fetch(`${API_BASE}/cart`, { headers: authHeaders() }),
+            fetch(`${API_BASE}/favorites`, { headers: authHeaders() }),
+            fetch(`${API_BASE}/orders`, { headers: authHeaders() }),
+        ]);
 
-    return {
-        authenticated: true,
-        user,
-        cart: {
-            items: cartItems.map((item) => ({
-                id: item.id,
-                type: item.type,
-                quantity: item.quantity,
-                product: {
-                    id: item.id,
-                    name: item.name,
-                    type: item.type,
-                    image: item.image,
-                    price: item.price,
-                    description: item.name,
-                },
-            })),
-            items_count: store.getCartCount(),
-            total: cartItems.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.quantity || 1)), 0),
-        },
-        favorites: favorites.map((item) => ({
-            id: item.id,
-            type: item.type,
-            product: {
-                id: item.id,
-                name: item.name,
-                type: item.type,
-                image: item.image,
-                price: item.price,
-                description: item.name,
+        const cartData = cartResponse.ok ? await cartResponse.json() : { data: [] };
+        const favoritesData = favoritesResponse.ok ? await favoritesResponse.json() : { data: [] };
+        const ordersData = ordersResponse.ok ? await ordersResponse.json() : { data: [] };
+
+        const cartItems = Array.isArray(cartData.data) ? cartData.data : [];
+        const favorites = Array.isArray(favoritesData.data) ? favoritesData.data : [];
+        const orders = Array.isArray(ordersData.data) ? ordersData.data : [];
+
+        return {
+            authenticated: true,
+            user,
+            cart: {
+                items: cartItems,
+                items_count: cartItems.reduce((sum, item) => sum + (item.quantity || 0), 0),
+                total: cartItems.reduce((sum, item) => {
+                    const product = item.product || item;
+                    return sum + (Number(product.price || 0) * Number(item.quantity || 1));
+                }, 0),
             },
-        })),
-        orders,
-    };
-}
-
-function handleCartStateChange() {
-    refreshHeader();
-}
-
-window.addEventListener('savora:cart-updated', handleCartStateChange);
-window.addEventListener('savora:favorites-updated', async () => {
-    const favoriteCount = document.getElementById('favoriteCount');
-    if (favoriteCount) {
-        const dashboard = await fetchDashboardData();
-        favoriteCount.textContent = dashboard.authenticated ? dashboard.favorites.length : 0;
-    }
-});
-window.addEventListener('savora:orders-updated', () => {
-    const ordersList = document.getElementById('ordersList');
-    if (ordersList) {
-        const syncOrdersView = async () => {
-            const dashboard = await fetchDashboardData();
-            const orders = dashboard.authenticated ? dashboard.orders : [];
-            const ordersCount = document.getElementById('ordersCount');
-            const favoriteCount = document.getElementById('favoriteCount');
-            const cartCount = document.getElementById('cartCount');
-            const profileName = document.getElementById('profileName');
-
-            if (ordersCount) ordersCount.textContent = orders.length;
-            if (favoriteCount) favoriteCount.textContent = dashboard.authenticated ? dashboard.favorites.length : 0;
-            if (cartCount) cartCount.textContent = dashboard.authenticated ? dashboard.cart.items_count || 0 : 0;
-            if (profileName) profileName.textContent = dashboard.authenticated && dashboard.user ? dashboard.user.name || 'Guest' : 'Guest';
-
-            if (!orders.length) {
-                ordersList.innerHTML = `
-                    <div class="empty-state">
-                        <h3>No orders yet</h3>
-                        <p>Your recent orders and order history will appear here.</p>
-                        <a href="/menu" class="btn btn-savora">Start ordering</a>
-                    </div>
-                `;
-                return;
-            }
-
-            ordersList.innerHTML = orders.map((order) => {
-                const item = order.items && order.items.length ? order.items[0] : null;
-                const itemName = item && item.name ? item.name : 'Savora order';
-                const image = item && item.image ? item.image : 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=400&q=80';
-                const total = Number(order.totalPrice || order.total_price || 0);
-                const date = order.date || order.created_at ? new Date(order.date || order.created_at).toLocaleDateString('en-GB', {
-                    day: '2-digit', month: 'short', year: 'numeric'
-                }) : 'Recent';
-                const status = (order.status || 'pending').toString();
-
-                return `
-                    <div class="cart-item">
-                        <div class="cart-image" style="background-image:url('${image}')"></div>
-                        <div class="cart-details">
-                            <div class="cart-header">
-                                <h3>Order #${order.id}</h3>
-                                <span class="dot-badge">${status}</span>
-                            </div>
-                            <p>${itemName} · ${order.items ? order.items.length : 0} items · Total ${total} EGP</p>
-                            <div class="cart-actions">
-                                <div class="qty-box">
-                                    <span>${date}</span>
-                                </div>
-                                <strong>${(order.paymentStatus || order.payment_status || 'pending').toString()}</strong>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+            favorites,
+            orders,
         };
-
-        syncOrdersView();
+    } catch (error) {
+        console.error('Failed to fetch dashboard data:', error);
+        return {
+            authenticated: false,
+            user: null,
+            cart: { items: [], items_count: 0, total: 0 },
+            favorites: [],
+            orders: [],
+        };
     }
-});
+}
+
+
 
 function showToast(message) {
     let toast = document.querySelector('.savora-toast');
@@ -182,9 +103,8 @@ async function refreshHeader() {
     const userBox = document.getElementById('userAction');
     const cartBadge = document.getElementById('cartBadge');
     const adminLink = document.getElementById('adminDashboardLink');
-    const store = getMockStore();
 
-    if (!isLoggedIn() || !store) {
+    if (!isLoggedIn()) {
         guestBox?.classList.remove('d-none');
         userBox?.classList.add('d-none');
         cartBadge?.classList.add('d-none');
@@ -207,26 +127,38 @@ async function refreshHeader() {
         }
     }
 
-    const count = store.getCartCount();
-    if (cartBadge) {
-        cartBadge.textContent = String(count);
-        if (count > 0) {
-            cartBadge.classList.remove('d-none');
-        } else {
-            cartBadge.classList.add('d-none');
+    try {
+        const response = await fetch(`${API_BASE}/cart`, { headers: authHeaders() });
+        const data = response.ok ? await response.json() : { data: [] };
+        const cartItems = Array.isArray(data.data) ? data.data : [];
+        const count = cartItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+
+        if (cartBadge) {
+            cartBadge.textContent = String(count);
+            if (count > 0) {
+                cartBadge.classList.remove('d-none');
+            } else {
+                cartBadge.classList.add('d-none');
+            }
         }
+    } catch (error) {
+        cartBadge?.classList.add('d-none');
     }
 }
 
-document.getElementById('logoutBtn')?.addEventListener('click', () => {
-    const store = getMockStore();
-    if (store) store.logoutMockUser();
+document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+    try {
+        await fetch(`${API_BASE}/auth/logout`, {
+            method: 'POST',
+            headers: authHeaders(),
+        });
+    } catch (error) {
+        console.error('Logout error:', error);
+    }
     localStorage.removeItem('savora_token');
     localStorage.removeItem('savora_user');
     document.cookie = 'savora_user_email=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     document.cookie = 'savora_user_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    window.dispatchEvent(new CustomEvent('savora:cart-updated'));
-    window.dispatchEvent(new CustomEvent('savora:orders-updated'));
     window.location.href = '/login';
 });
 
@@ -258,9 +190,18 @@ document.getElementById('aiQuerySubmit')?.addEventListener('click', async () => 
     btn.querySelector('.spinner-border').classList.remove('d-none');
     resultBox.innerHTML = '';
 
-    const matches = getMockStore()?.getProducts().filter((item) => item.name.toLowerCase().includes(query.toLowerCase()) || item.description.toLowerCase().includes(query.toLowerCase())).slice(0, 3) || [];
-
     try {
+        const response = await fetch(`${API_BASE}/ai/search`, {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({ query }),
+        });
+
+        if (!response.ok) throw new Error('Search failed');
+
+        const data = await response.json();
+        const matches = Array.isArray(data.data) ? data.data : [];
+
         if (matches.length) {
             resultBox.innerHTML = `<p class="small mb-2">Based on your search, these are the closest matches for you.</p>` +
                 matches.map((item) => `
@@ -274,6 +215,7 @@ document.getElementById('aiQuerySubmit')?.addEventListener('click', async () => 
 
         resultBox.innerHTML = '<p class="text-muted small">No matching items found.</p>';
     } catch (error) {
+        console.error('Search error:', error);
         resultBox.innerHTML = '<p class="text-danger small">Cannot connect to the server.</p>';
     } finally {
         btn.disabled = false;

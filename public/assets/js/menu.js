@@ -18,6 +18,8 @@ const state = {
     itemsByKey: {},
 };
 
+const API_BASE = '/api';
+
 const PLACEHOLDER_ICON = { food: 'bi-egg-fried', beverage: 'bi-cup-straw' };
 const CATEGORY_ICONS = {
     pizza: 'bi-circle', burgers: 'bi-basket', sandwiches: 'bi-basket2',
@@ -25,6 +27,63 @@ const CATEGORY_ICONS = {
     juices: 'bi-cup-straw', 'soft-drinks': 'bi-cup', 'hot-drinks': 'bi-cup-hot-fill',
     'cold-drinks': 'bi-snow2',
 };
+
+function getToken() {
+    return localStorage.getItem('savora_token') || '';
+}
+
+function authHeaders(json = true) {
+    const headers = { Accept: 'application/json' };
+    if (json) headers['Content-Type'] = 'application/json';
+    if (getToken()) headers['Authorization'] = `Bearer ${getToken()}`;
+    return headers;
+}
+
+function isLoggedIn() {
+    return !!getToken();
+}
+
+function requireLogin(redirectTo = '/login') {
+    showToast('Please log in to continue.');
+    setTimeout(() => {
+        window.location.href = redirectTo;
+    }, 800);
+}
+
+function showToast(message) {
+    let toast = document.querySelector('.savora-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.className = 'savora-toast';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    requestAnimationFrame(() => toast.classList.add('show'));
+    setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+function refreshHeader() {
+    const cartBadge = document.getElementById('cartBadge');
+    if (!cartBadge) return;
+
+    if (!isLoggedIn()) {
+        cartBadge.classList.add('d-none');
+        return;
+    }
+
+    fetch(`${API_BASE}/cart`, { headers: authHeaders() })
+        .then(res => res.json())
+        .then(data => {
+            const count = Array.isArray(data.data) ? data.data.reduce((sum, item) => sum + (item.quantity || 0), 0) : 0;
+            cartBadge.textContent = String(count);
+            if (count > 0) {
+                cartBadge.classList.remove('d-none');
+            } else {
+                cartBadge.classList.add('d-none');
+            }
+        })
+        .catch(() => cartBadge.classList.add('d-none'));
+}
 
 function itemKey(item) { return `${item.type}_${item.id}`; }
 
@@ -39,30 +98,36 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadCategories() {
-    const store = window.SavoraMockStore;
-    const categories = store ? store.getCategories() : [];
-    state.categories = categories;
+    try {
+        const response = await fetch(`${API_BASE}/categories`);
+        const data = response.ok ? await response.json() : { data: [] };
+        const categories = Array.isArray(data.data) ? data.data : [];
+        state.categories = categories;
 
-    const wrap = document.getElementById('categoryTabs');
-    wrap.innerHTML = '';
+        const wrap = document.getElementById('categoryTabs');
+        wrap.innerHTML = '';
 
-    const allBtn = document.createElement('button');
-    allBtn.className = 'cat-tab active';
-    allBtn.dataset.id = '';
-    allBtn.dataset.type = '';
-    allBtn.innerHTML = '<i class="bi bi-grid"></i> All';
-    allBtn.addEventListener('click', () => selectCategory('', allBtn));
-    wrap.appendChild(allBtn);
+        const allBtn = document.createElement('button');
+        allBtn.className = 'cat-tab active';
+        allBtn.dataset.id = '';
+        allBtn.dataset.type = '';
+        allBtn.innerHTML = '<i class="bi bi-grid"></i> All';
+        allBtn.addEventListener('click', () => selectCategory('', allBtn));
+        wrap.appendChild(allBtn);
 
-    categories.forEach((cat) => {
-        const btn = document.createElement('button');
-        btn.className = 'cat-tab';
-        btn.dataset.id = cat.id;
-        btn.dataset.type = cat.type;
-        btn.innerHTML = `<i class="bi ${CATEGORY_ICONS[cat.slug] || 'bi-basket'}"></i> ${cat.name}`;
-        btn.addEventListener('click', () => selectCategory(cat.id, btn));
-        wrap.appendChild(btn);
-    });
+        categories.forEach((cat) => {
+            const btn = document.createElement('button');
+            btn.className = 'cat-tab';
+            btn.dataset.id = cat.id;
+            btn.dataset.type = cat.type;
+            btn.innerHTML = `<i class="bi ${CATEGORY_ICONS[cat.slug] || 'bi-basket'}"></i> ${cat.name}`;
+            btn.addEventListener('click', () => selectCategory(cat.id, btn));
+            wrap.appendChild(btn);
+        });
+    } catch (error) {
+        console.error('Failed to load categories:', error);
+        state.categories = [];
+    }
 }
 
 function selectCategory(id, btnEl) {
@@ -74,27 +139,19 @@ function selectCategory(id, btnEl) {
 }
 
 async function loadFavorites() {
-    const store = window.SavoraMockStore;
-    if (!store) return;
-    state.favoritesSet = new Set((store.getFavorites() || []).map((fav) => `${fav.type}_${Number(fav.id)}`));
+    if (!isLoggedIn()) return;
+    try {
+        const response = await fetch(`${API_BASE}/favorites`, { headers: authHeaders() });
+        const data = response.ok ? await response.json() : { data: [] };
+        const favorites = Array.isArray(data.data) ? data.data : [];
+        state.favoritesSet = new Set(favorites.map((fav) => `${fav.favorable_type}_${Number(fav.favorable_id)}`));
+    } catch (error) {
+        console.error('Failed to load favorites:', error);
+        state.favoritesSet = new Set();
+    }
 }
 
-window.addEventListener('savora:favorites-updated', async () => {
-    await loadFavorites();
 
-    document.querySelectorAll('[data-favorite]').forEach((button) => {
-        const type = button.dataset.favorite;
-        const id = Number(button.dataset.id || 0);
-        if (!type || !id) return;
-
-        const isActive = state.favoritesSet.has(`${type}_${id}`);
-        button.classList.toggle('active', isActive);
-        const icon = button.querySelector('i');
-        if (icon) {
-            icon.className = `bi ${isActive ? 'bi-heart-fill' : 'bi-heart'}`;
-        }
-    });
-});
 
 async function toggleFavorite(type, id, btnEl) {
     if (!isLoggedIn()) {
@@ -102,29 +159,58 @@ async function toggleFavorite(type, id, btnEl) {
         return;
     }
 
-    const store = window.SavoraMockStore;
     const key = `${type}_${id}`;
     const isActive = state.favoritesSet.has(key);
 
     btnEl.classList.add('pulse');
     setTimeout(() => btnEl.classList.remove('pulse'), 350);
 
-    const nextFavorites = store.toggleFavorite(type, id);
-    state.favoritesSet = new Set((nextFavorites || []).map((item) => `${item.type}_${Number(item.id)}`));
+    try {
+        const response = await fetch(`${API_BASE}/favorites`, {
+            method: isActive ? 'DELETE' : 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({ type, id }),
+        });
 
-    btnEl.classList.toggle('active', !isActive);
-    const icon = btnEl.querySelector('i');
-    if (icon) icon.className = `bi ${!isActive ? 'bi-heart-fill' : 'bi-heart'}`;
+        if (!response.ok) {
+            const data = await response.json();
+            showToast(data.message || 'Could not update favorites.');
+            return;
+        }
+
+        if (isActive) {
+            state.favoritesSet.delete(key);
+            btnEl.classList.remove('active');
+            const icon = btnEl.querySelector('i');
+            if (icon) icon.className = 'bi bi-heart';
+            showToast('Removed from favorites');
+        } else {
+            state.favoritesSet.add(key);
+            btnEl.classList.add('active');
+            const icon = btnEl.querySelector('i');
+            if (icon) icon.className = 'bi bi-heart-fill';
+            showToast('Added to favorites');
+        }
+    } catch (error) {
+        console.error('Failed to toggle favorite:', error);
+        showToast('Could not update favorites.');
+    }
 }
 
 async function loadCart() {
-    const store = window.SavoraMockStore;
+    if (!isLoggedIn()) return;
     state.cartMap = {};
-    if (!store) return;
-
-    (store.getCart() || []).forEach((item) => {
-        state.cartMap[`${item.type}_${Number(item.id)}`] = { quantity: Number(item.quantity || 1) };
-    });
+    try {
+        const response = await fetch(`${API_BASE}/cart`, { headers: authHeaders() });
+        const data = response.ok ? await response.json() : { data: [] };
+        const cartItems = Array.isArray(data.data) ? data.data : [];
+        cartItems.forEach((item) => {
+            const key = `${item.purchasable_type}_${Number(item.purchasable_id)}`;
+            state.cartMap[key] = { quantity: Number(item.quantity || 1) };
+        });
+    } catch (error) {
+        console.error('Failed to load cart:', error);
+    }
 }
 
 async function addToCart(type, id) {
@@ -133,17 +219,27 @@ async function addToCart(type, id) {
         return;
     }
 
-    const store = window.SavoraMockStore;
-    if (!store) return;
+    try {
+        const response = await fetch(`${API_BASE}/cart/items`, {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({ type, id, quantity: 1 }),
+        });
 
-    const product = store.findProduct(type, id);
-    if (!product) return;
+        if (!response.ok) {
+            const data = await response.json();
+            showToast(data.message || 'Could not add to cart.');
+            return;
+        }
 
-    store.addToCart(product, 1);
-    await loadCart();
-    refreshHeader();
-    updateCardFooterByKey(`${type}_${id}`);
-    showToast(`${product.name} added to cart.`);
+        await loadCart();
+        refreshHeader();
+        updateCardFooterByKey(`${type}_${id}`);
+        showToast('Added to cart');
+    } catch (error) {
+        console.error('Failed to add to cart:', error);
+        showToast('Could not add to cart.');
+    }
 }
 
 async function changeQuantity(type, id, delta) {
@@ -151,19 +247,32 @@ async function changeQuantity(type, id, delta) {
     const entry = state.cartMap[key];
     if (!entry) return;
 
-    const store = window.SavoraMockStore;
     const nextQty = Number(entry.quantity || 1) + Number(delta || 0);
 
-    if (nextQty <= 0) {
-        store.removeCartItem(type, id);
-        delete state.cartMap[key];
-    } else {
-        store.updateCartQuantity(type, id, delta);
-        state.cartMap[key].quantity = nextQty;
-    }
+    try {
+        if (nextQty <= 0) {
+            const response = await fetch(`${API_BASE}/cart/items/${key}`, {
+                method: 'DELETE',
+                headers: authHeaders(),
+            });
+            if (!response.ok) throw new Error('Failed to remove item');
+            delete state.cartMap[key];
+        } else {
+            const response = await fetch(`${API_BASE}/cart/items/${key}`, {
+                method: 'PATCH',
+                headers: authHeaders(),
+                body: JSON.stringify({ quantity: nextQty }),
+            });
+            if (!response.ok) throw new Error('Failed to update quantity');
+            state.cartMap[key].quantity = nextQty;
+        }
 
-    refreshHeader();
-    updateCardFooterByKey(key);
+        refreshHeader();
+        updateCardFooterByKey(key);
+    } catch (error) {
+        console.error('Failed to change quantity:', error);
+        showToast('Could not update cart.');
+    }
 }
 
 function updateCardFooterByKey(key) {
@@ -178,23 +287,26 @@ function updateCardFooterByKey(key) {
 }
 
 async function loadRecommendations() {
-    const store = window.SavoraMockStore;
-    if (!store) return;
+    if (!isLoggedIn()) return;
+    try {
+        const response = await fetch(`${API_BASE}/recommendations`, { headers: authHeaders() });
+        const data = response.ok ? await response.json() : { data: [] };
+        const recommendations = Array.isArray(data.data) ? data.data : [];
 
-    const products = store.getProducts();
-    const list = products.slice(0, 10).map((item, index) => ({
-        item,
-        match_percentage: 92 - (index % 5) * 2,
-    }));
+        state.matchMap = {};
+        const list = recommendations.map((rec) => {
+            const item = rec.item || rec;
+            const matchPercentage = rec.match_percentage || 92;
+            state.matchMap[`${item.type}_${item.id}`] = matchPercentage;
+            return { item, match_percentage: matchPercentage };
+        });
 
-    state.matchMap = {};
-    list.forEach((entry) => {
-        state.matchMap[`${entry.item.type}_${entry.item.id}`] = entry.match_percentage;
-    });
-
-    const section = document.getElementById('recommendedSection');
-    if (section) section.classList.remove('d-none');
-    renderRecommendedList(list);
+        const section = document.getElementById('recommendedSection');
+        if (section && list.length) section.classList.remove('d-none');
+        if (list.length) renderRecommendedList(list);
+    } catch (error) {
+        console.error('Failed to load recommendations:', error);
+    }
 }
 
 function renderRecommendedList(list) {
@@ -377,44 +489,64 @@ function debounce(fn, delay) {
 async function loadMenu() {
     document.getElementById('resultsCount').textContent = 'Loading...';
 
-    const items = window.SavoraMockStore ? window.SavoraMockStore.getProducts() : [];
-    let merged = [...items];
+    try {
+        const [foodResponse, beverageResponse] = await Promise.all([
+            fetch(`${API_BASE}/food-items`),
+            fetch(`${API_BASE}/beverages`),
+        ]);
 
-    if (state.type) merged = merged.filter((item) => item.type === state.type);
-    if (state.categoryId) merged = merged.filter((item) => Number(item.category?.id) === Number(state.categoryId));
+        const foodData = foodResponse.ok ? await foodResponse.json() : { data: [] };
+        const beverageData = beverageResponse.ok ? await beverageResponse.json() : { data: [] };
 
-    if (state.search) {
-        const query = state.search.toLowerCase();
-        merged = merged.filter((item) => item.name.toLowerCase().includes(query) || (item.description || '').toLowerCase().includes(query));
+        const foodItems = Array.isArray(foodData.data) ? foodData.data : [];
+        const beverages = Array.isArray(beverageData.data) ? beverageData.data : [];
+
+        let merged = [
+            ...foodItems.map((item) => ({ ...item, type: 'food', is_available: item.status })),
+            ...beverages.map((item) => ({ ...item, type: 'beverage', is_available: item.status })),
+        ];
+
+        if (state.type) merged = merged.filter((item) => item.type === state.type);
+        if (state.categoryId) merged = merged.filter((item) => Number(item.category?.id) === Number(state.categoryId));
+
+        if (state.search) {
+            const query = state.search.toLowerCase();
+            merged = merged.filter((item) => item.name.toLowerCase().includes(query) || (item.description || '').toLowerCase().includes(query));
+        }
+
+        merged = merged.filter((item) => Number(item.price) >= Number(state.minPrice));
+        merged = merged.filter((item) => Number(item.price) <= Number(state.maxPrice));
+
+        if (state.spicyLevel !== '') {
+            merged = merged.filter((item) => item.type === 'food' && Number(item.spicy_level || 0) === Number(state.spicyLevel));
+        }
+
+        if (state.maxCalories) {
+            merged = merged.filter((item) => Number(item.calories || 0) <= Number(state.maxCalories));
+        }
+
+        if (state.availableOnly) {
+            merged = merged.filter((item) => item.is_available !== false && item.quantity > 0);
+        }
+
+        if (state.sort === 'match_desc') {
+            merged.sort((a, b) => (state.matchMap[itemKey(b)] || 0) - (state.matchMap[itemKey(a)] || 0));
+        } else if (state.sort === 'name') {
+            merged.sort((a, b) => a.name.localeCompare(b.name));
+        } else if (state.sort === 'price_asc') {
+            merged.sort((a, b) => a.price - b.price);
+        } else if (state.sort === 'price_desc') {
+            merged.sort((a, b) => b.price - a.price);
+        }
+
+        state.allItems = merged;
+        renderGrid();
+    } catch (error) {
+        console.error('Failed to load menu:', error);
+        document.getElementById('resultsCount').textContent = 'Error loading menu';
+        state.allItems = [];
+        renderGrid();
     }
-
-    merged = merged.filter((item) => Number(item.price) >= Number(state.minPrice));
-    merged = merged.filter((item) => Number(item.price) <= Number(state.maxPrice));
-
-    if (state.spicyLevel !== '') {
-        merged = merged.filter((item) => item.type === 'food' && Number(item.spicy_level || 0) === Number(state.spicyLevel));
-    }
-
-    if (state.maxCalories) {
-        merged = merged.filter((item) => Number(item.calories || 0) <= Number(state.maxCalories));
-    }
-
-    if (state.availableOnly) {
-        merged = merged.filter((item) => item.is_available !== false);
-    }
-
-    if (state.sort === 'match_desc') {
-        merged.sort((a, b) => (state.matchMap[itemKey(b)] || 0) - (state.matchMap[itemKey(a)] || 0));
-    } else if (state.sort === 'name') {
-        merged.sort((a, b) => a.name.localeCompare(b.name));
-    } else if (state.sort === 'price_asc') {
-        merged.sort((a, b) => a.price - b.price);
-    } else if (state.sort === 'price_desc') {
-        merged.sort((a, b) => b.price - a.price);
-    }
-
-    state.allItems = merged;
-    renderGrid();
 }
 
 function renderGrid() {

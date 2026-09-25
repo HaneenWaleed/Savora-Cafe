@@ -73,18 +73,40 @@
 
 @push('scripts')
     <script>
+        const API_BASE = '/api';
+
+        function getToken() {
+            return localStorage.getItem('savora_token') || '';
+        }
+
+        function authHeaders(json = true) {
+            const headers = { Accept: 'application/json' };
+            if (json) headers['Content-Type'] = 'application/json';
+            if (getToken()) headers['Authorization'] = `Bearer ${getToken()}`;
+            return headers;
+        }
+
+        function showToast(message) {
+            let toast = document.querySelector('.savora-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.className = 'savora-toast';
+                document.body.appendChild(toast);
+            }
+            toast.textContent = message;
+            requestAnimationFrame(() => toast.classList.add('show'));
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
             const favoritesGrid = document.getElementById('favoritesGrid');
             const recommendedList = document.getElementById('recommendedList');
 
             const resolveFavoriteProduct = (item = {}) => {
                 const source = item.product || item.item || item;
-                const productType = source?.type || item?.type || 'food';
-                const productId = Number(source?.id ?? item?.id ?? 0);
-                const store = window.SavoraMockStore;
-                const productFromStore = store && productType && productId ? store.findProduct(productType, productId) : null;
+                const productType = item.favorable_type || source?.type || 'food';
+                const productId = Number(item.favorable_id || source?.id ?? item?.id ?? 0);
                 const merged = {
-                    ...(productFromStore || {}),
                     ...(source || {}),
                     ...(item || {}),
                 };
@@ -159,33 +181,49 @@
                 }).join('');
 
                 favoritesGrid.querySelectorAll('.favorite-heart').forEach((button) => {
-                    button.addEventListener('click', () => {
+                    button.addEventListener('click', async () => {
                         const type = button.dataset.productType;
                         const id = Number(button.dataset.productId || 0);
-                        const store = window.SavoraMockStore;
 
-                        if (!store || !type || !id) {
-                            return;
+                        if (!type || !id) return;
+
+                        try {
+                            const response = await fetch(`${API_BASE}/favorites/${type}/${id}`, {
+                                method: 'DELETE',
+                                headers: authHeaders(),
+                            });
+                            if (!response.ok) throw new Error('Failed to remove favorite');
+                            const newFavorites = await loadFavorites();
+                            renderFavorites(newFavorites);
+                            showToast('Removed from favorites');
+                        } catch (error) {
+                            console.error('Failed to remove favorite:', error);
+                            showToast('Could not remove favorite.');
                         }
-
-                        store.toggleFavorite(type, id);
-                        const nextFavorites = store.getFavorites();
-                        renderFavorites(nextFavorites);
-                        showToast('Removed from favorites.');
                     });
                 });
             };
 
+            const loadFavorites = async () => {
+                try {
+                    const response = await fetch(`${API_BASE}/favorites`, { headers: authHeaders() });
+                    const data = response.ok ? await response.json() : { data: [] };
+                    return Array.isArray(data.data) ? data.data : [];
+                } catch (error) {
+                    console.error('Failed to load favorites:', error);
+                    return [];
+                }
+            };
+
             const syncFavoritesView = async () => {
                 try {
-                    const dashboard = await fetchDashboardData();
-                    renderFavorites(dashboard.authenticated ? dashboard.favorites : []);
+                    const favorites = await loadFavorites();
+                    renderFavorites(favorites);
                 } catch (error) {
                     renderFavorites([]);
                 }
             };
 
-            window.addEventListener('savora:favorites-updated', syncFavoritesView);
             await syncFavoritesView();
         });
     </script>

@@ -1,3 +1,5 @@
+const API_BASE = '/api';
+
 const CATEGORY_ICONS = {
     pizza: 'bi-circle',
     burgers: 'bi-basket',
@@ -11,40 +13,64 @@ const CATEGORY_ICONS = {
     'cold-drinks': 'bi-snow2',
 };
 
-const FALLBACK_ITEMS = [
-    {
-        id: 1,
-        type: 'food',
-        name: 'Margherita Pizza',
-        price: 110,
-        category: { name: 'Pizza' },
-        image_url: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=900&q=80',
-    },
-    {
-        id: 2,
-        type: 'food',
-        name: 'Classic Burger',
-        price: 110,
-        category: { name: 'Burgers' },
-        image_url: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=900&q=80',
-    },
-    {
-        id: 3,
-        type: 'beverage',
-        name: 'Iced Latte',
-        price: 75,
-        category: { name: 'Coffee' },
-        image_url: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=900&q=80',
-    },
-    {
-        id: 4,
-        type: 'food',
-        name: 'Spicy Pasta',
-        price: 150,
-        category: { name: 'Pasta' },
-        image_url: 'https://images.unsplash.com/photo-1555949258-eb67b1ef0ceb?auto=format&fit=crop&w=900&q=80',
-    },
-];
+function getToken() {
+    return localStorage.getItem('savora_token') || '';
+}
+
+function authHeaders(json = true) {
+    const headers = { Accept: 'application/json' };
+    if (json) headers['Content-Type'] = 'application/json';
+    if (getToken()) headers['Authorization'] = `Bearer ${getToken()}`;
+    return headers;
+}
+
+function isLoggedIn() {
+    return !!getToken();
+}
+
+function requireLogin(redirectTo = '/login') {
+    showToast('Please log in to continue.');
+    setTimeout(() => {
+        window.location.href = redirectTo;
+    }, 800);
+}
+
+function showToast(message) {
+    let toast = document.querySelector('.savora-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.className = 'savora-toast';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    requestAnimationFrame(() => toast.classList.add('show'));
+    setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+function refreshHeader() {
+    const cartBadge = document.getElementById('cartBadge');
+    if (!cartBadge) return;
+
+    if (!isLoggedIn()) {
+        cartBadge.classList.add('d-none');
+        return;
+    }
+
+    fetch(`${API_BASE}/cart`, { headers: authHeaders() })
+        .then(res => res.json())
+        .then(data => {
+            const count = Array.isArray(data.data) ? data.data.reduce((sum, item) => sum + (item.quantity || 0), 0) : 0;
+            cartBadge.textContent = String(count);
+            if (count > 0) {
+                cartBadge.classList.remove('d-none');
+            } else {
+                cartBadge.classList.add('d-none');
+            }
+        })
+        .catch(() => cartBadge.classList.add('d-none'));
+}
+
+
 
 document.addEventListener('DOMContentLoaded', async () => {
     const categoryGrid = document.getElementById('homeCategoryGrid');
@@ -61,59 +87,61 @@ document.addEventListener('DOMContentLoaded', async () => {
         const { categories, items } = await loadHomeData();
 
         renderCategories(categories);
-        renderHeroSlider(items.length ? items : FALLBACK_ITEMS);
+        renderHeroSlider(items.length ? items : []);
         renderFeatured(items);
         renderRecommendations(items);
         renderStats(categories, items);
     } catch (error) {
         renderCategories([]);
-        renderHeroSlider(FALLBACK_ITEMS);
-        renderFeatured(FALLBACK_ITEMS);
-        renderRecommendations(FALLBACK_ITEMS);
-        renderStats([], FALLBACK_ITEMS);
+        renderHeroSlider([]);
+        renderFeatured([]);
+        renderRecommendations([]);
+        renderStats([], []);
     }
 
     bindHeroSlider();
 });
 
 async function loadHomeData() {
-    const [categoriesResponse, foodResponse, beverageResponse] = await Promise.all([
-        fetch(`${API_BASE}/categories`),
-        fetch(`${API_BASE}/food-items?per_page=8&sort=newest`),
-        fetch(`${API_BASE}/beverages?per_page=8&sort=newest`),
-    ]);
+    try {
+        const [categoriesResponse, foodResponse, beverageResponse] = await Promise.all([
+            fetch(`${API_BASE}/categories`),
+            fetch(`${API_BASE}/food-items?per_page=8`),
+            fetch(`${API_BASE}/beverages?per_page=8`),
+        ]);
 
-    const categoriesData = categoriesResponse.ok ? await categoriesResponse.json() : { data: [] };
-    const foodData = foodResponse.ok ? await foodResponse.json() : { data: [] };
-    const beverageData = beverageResponse.ok ? await beverageResponse.json() : { data: [] };
+        const categoriesData = categoriesResponse.ok ? await categoriesResponse.json() : { data: [] };
+        const foodData = foodResponse.ok ? await foodResponse.json() : { data: [] };
+        const beverageData = beverageResponse.ok ? await beverageResponse.json() : { data: [] };
 
-    const categories = Array.isArray(categoriesData.data) ? categoriesData.data : [];
-    const foodItems = Array.isArray(foodData.data) ? foodData.data : [];
-    const beverages = Array.isArray(beverageData.data) ? beverageData.data : [];
-    const items = [...foodItems, ...beverages].sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0));
+        const categories = Array.isArray(categoriesData.data) ? categoriesData.data : [];
+        const foodItems = Array.isArray(foodData.data) ? foodData.data : [];
+        const beverages = Array.isArray(beverageData.data) ? beverageData.data : [];
+        const items = [...foodItems.map(item => ({ ...item, type: 'food' })), ...beverages.map(item => ({ ...item, type: 'beverage' }))].sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0));
 
-    return {
-        categories: categories.slice(0, 8),
-        items: items.slice(0, 8),
-    };
+        return {
+            categories: categories.slice(0, 8),
+            items: items.slice(0, 8),
+        };
+    } catch (error) {
+        console.error('Failed to load home data:', error);
+        return {
+            categories: [],
+            items: [],
+        };
+    }
 }
 
 function renderCategories(categories) {
     const grid = document.getElementById('homeCategoryGrid');
     if (!grid) return;
 
-    const source = categories.length ? categories : [
-        { name: 'Pizza', slug: 'pizza' },
-        { name: 'Burgers', slug: 'burgers' },
-        { name: 'Sandwiches', slug: 'sandwiches' },
-        { name: 'Pasta', slug: 'pasta' },
-        { name: 'Desserts', slug: 'desserts' },
-        { name: 'Coffee', slug: 'coffee' },
-        { name: 'Juices', slug: 'juices' },
-        { name: 'Cold Drinks', slug: 'cold-drinks' },
-    ];
+    if (!categories.length) {
+        grid.innerHTML = '<div class="empty-state">No categories available</div>';
+        return;
+    }
 
-    grid.innerHTML = source.map((category) => {
+    grid.innerHTML = categories.map((category) => {
         const slug = category.slug || category.name.toLowerCase().replace(/\s+/g, '-');
         const iconName = CATEGORY_ICONS[slug] || 'bi-grid';
         return `
@@ -129,6 +157,12 @@ function renderHeroSlider(items) {
     const slider = document.getElementById('heroSlider');
     const dotsWrap = document.getElementById('heroSliderDots');
     if (!slider) return;
+
+    if (!items.length) {
+        slider.innerHTML = '<div class="empty-panel">No featured items available</div>';
+        dotsWrap.innerHTML = '';
+        return;
+    }
 
     const source = items.slice(0, 4);
     let activeIndex = 0;
@@ -213,9 +247,12 @@ function renderFeatured(items) {
     const grid = document.getElementById('featuredGrid');
     if (!grid) return;
 
-    const source = items.length ? items : FALLBACK_ITEMS;
+    if (!items.length) {
+        grid.innerHTML = '<div class="empty-state">No featured items available</div>';
+        return;
+    }
 
-    grid.innerHTML = source.slice(0, 4).map((item) => `
+    grid.innerHTML = items.slice(0, 4).map((item) => `
         <article class="menu-item-card reveal">
             <div class="image-wrap">
                 ${item.image_url ? `<img src="${item.image_url}" alt="${escapeHtml(item.name)}">` : `<div class="placeholder-img"><i class="bi bi-basket2"></i></div>`}
@@ -245,9 +282,12 @@ function renderRecommendations(items) {
     const grid = document.getElementById('homeRecommendationGrid');
     if (!grid) return;
 
-    const source = items.length ? items : FALLBACK_ITEMS;
+    if (!items.length) {
+        grid.innerHTML = '<div class="empty-state">No recommendations available</div>';
+        return;
+    }
 
-    grid.innerHTML = source.slice(0, 4).map((item, index) => `
+    grid.innerHTML = items.slice(0, 4).map((item, index) => `
         <article class="menu-item-card reveal" style="animation-delay:${index * 60}ms">
             <div class="image-wrap">
                 ${item.image_url ? `<img src="${item.image_url}" alt="${escapeHtml(item.name)}">` : `<div class="placeholder-img"><i class="bi bi-basket2"></i></div>`}

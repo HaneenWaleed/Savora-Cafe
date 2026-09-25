@@ -96,6 +96,31 @@
 
 @push('scripts')
     <script>
+        const API_BASE = '/api';
+
+        function getToken() {
+            return localStorage.getItem('savora_token') || '';
+        }
+
+        function authHeaders(json = true) {
+            const headers = { Accept: 'application/json' };
+            if (json) headers['Content-Type'] = 'application/json';
+            if (getToken()) headers['Authorization'] = `Bearer ${getToken()}`;
+            return headers;
+        }
+
+        function showToast(message) {
+            let toast = document.querySelector('.savora-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.className = 'savora-toast';
+                document.body.appendChild(toast);
+            }
+            toast.textContent = message;
+            requestAnimationFrame(() => toast.classList.add('show'));
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
             const container = document.getElementById('cartItemsContainer');
             const subtotalEl = document.getElementById('summarySubtotal');
@@ -103,23 +128,24 @@
             const taxEl = document.getElementById('summaryTax');
             const totalEl = document.getElementById('summaryTotal');
 
-            const getCartItems = () => {
-                const store = window.SavoraMockStore;
-                if (!store) return [];
-
-                return store.getCart().map((item) => ({
-                    id: Number(item.id),
-                    type: item.type,
-                    quantity: Number(item.quantity || 1),
-                    price: Number(item.price || 0),
-                    name: item.name,
-                    image: item.image,
-                    description: item.name || 'Item in your cart.',
-                }));
+            const getCartItems = async () => {
+                try {
+                    const response = await fetch('/api/cart', { headers: authHeaders() });
+                    const data = response.ok ? await response.json() : { data: [] };
+                    return Array.isArray(data.data) ? data.data : [];
+                } catch (error) {
+                    console.error('Failed to load cart:', error);
+                    return [];
+                }
             };
 
             const renderCartState = (items = []) => {
-                const subtotal = Number(items.reduce((sum, item) => sum + ((Number(item.price) || 0) * (Number(item.quantity) || 1)), 0).toFixed(2));
+                const subtotal = Number(items.reduce((sum, item) => {
+                    const product = item.product || item;
+                    const price = Number(product.price || 0);
+                    const quantity = Number(item.quantity || 1);
+                    return sum + (price * quantity);
+                }, 0).toFixed(2));
                 const delivery = subtotal > 0 ? 25 : 0;
                 const tax = subtotal > 0 ? Number((subtotal * 0.05).toFixed(2)) : 0;
                 const total = subtotal + delivery + tax;
@@ -141,29 +167,32 @@
                 }
 
                 container.innerHTML = items.map((item) => {
-                    const price = Number(item.price || 0);
+                    const product = item.product || item;
+                    const price = Number(product.price || 0);
                     const quantity = Number(item.quantity || 1);
                     const subtotalValue = price * quantity;
-                    const image = item.image
-                        ? `/storage/${String(item.image).replace(/^\//, '')}`
+                    const image = product.image
+                        ? `/storage/${String(product.image).replace(/^\//, '')}`
                         : 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=400&q=80';
+                    const itemType = item.purchasable_type || product.type || 'food';
+                    const itemId = item.purchasable_id || product.id || item.id;
 
                     return `
-                        <div class="cart-item" data-item-id="${item.id}" data-item-type="${item.type}">
+                        <div class="cart-item" data-item-id="${itemId}" data-item-type="${itemType}">
                             <div class="cart-image" style="background-image:url('${image}')"></div>
                             <div class="cart-details">
                                 <div class="cart-header">
-                                    <h3>${item.name || 'Cart item'}</h3>
-                                    <button type="button" class="delete-btn" data-id="${item.id}" data-type="${item.type}" aria-label="Remove item">
+                                    <h3>${product.name || 'Cart item'}</h3>
+                                    <button type="button" class="delete-btn" data-id="${itemId}" data-type="${itemType}" aria-label="Remove item">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </div>
-                                <p>${item.description || 'Item in your cart.'}</p>
+                                <p>${product.description || 'Item in your cart.'}</p>
                                 <div class="cart-actions">
                                     <div class="qty-box">
-                                        <button type="button" class="qty-btn qty-decrease" data-id="${item.id}" data-type="${item.type}" ${quantity <= 1 ? 'disabled' : ''}>-</button>
+                                        <button type="button" class="qty-btn qty-decrease" data-id="${itemId}" data-type="${itemType}" ${quantity <= 1 ? 'disabled' : ''}>-</button>
                                         <span>${quantity}</span>
-                                        <button type="button" class="qty-btn qty-increase" data-id="${item.id}" data-type="${item.type}">+</button>
+                                        <button type="button" class="qty-btn qty-increase" data-id="${itemId}" data-type="${itemType}">+</button>
                                     </div>
                                     <strong>${subtotalValue.toFixed(2)} EGP</strong>
                                 </div>
@@ -173,40 +202,67 @@
                 }).join('');
 
                 container.querySelectorAll('.qty-btn').forEach((button) => {
-                    button.addEventListener('click', () => {
-                        const store = window.SavoraMockStore;
-                        if (!store) return;
-
+                    button.addEventListener('click', async () => {
                         const id = Number(button.dataset.id);
                         const type = button.dataset.type;
                         const delta = button.classList.contains('qty-increase') ? 1 : -1;
-                        const currentItem = store.getCart().find((entry) => entry.type === type && Number(entry.id) === id);
+                        const currentItem = items.find((entry) =>
+                            (entry.purchasable_id === id || entry.product?.id === id) &&
+                            (entry.purchasable_type === type || entry.product?.type === type)
+                        );
 
                         if (!currentItem) return;
 
                         const nextQuantity = Number(currentItem.quantity || 1) + delta;
-                        if (nextQuantity < 1) {
-                            return;
-                        }
+                        if (nextQuantity < 1) return;
 
-                        store.updateCartQuantity(type, id, delta);
-                        renderCartState(getCartItems());
+                        try {
+                            const response = await fetch(`/api/cart/items/${currentItem.id}`, {
+                                method: 'PATCH',
+                                headers: authHeaders(),
+                                body: JSON.stringify({ quantity: nextQuantity }),
+                            });
+                            if (!response.ok) throw new Error('Failed to update quantity');
+                            const newItems = await getCartItems();
+                            renderCartState(newItems);
+                        } catch (error) {
+                            console.error('Failed to update quantity:', error);
+                            showToast('Could not update cart.');
+                        }
                     });
                 });
 
                 container.querySelectorAll('.delete-btn').forEach((button) => {
-                    button.addEventListener('click', () => {
-                        const store = window.SavoraMockStore;
-                        if (!store) return;
+                    button.addEventListener('click', async () => {
+                        const id = Number(button.dataset.id);
+                        const type = button.dataset.type;
+                        const currentItem = items.find((entry) =>
+                            (entry.purchasable_id === id || entry.product?.id === id) &&
+                            (entry.purchasable_type === type || entry.product?.type === type)
+                        );
 
-                        store.removeCartItem(button.dataset.type, Number(button.dataset.id));
-                        renderCartState(getCartItems());
+                        if (!currentItem) return;
+
+                        try {
+                            const response = await fetch(`/api/cart/items/${currentItem.id}`, {
+                                method: 'DELETE',
+                                headers: authHeaders(),
+                            });
+                            if (!response.ok) throw new Error('Failed to remove item');
+                            const newItems = await getCartItems();
+                            renderCartState(newItems);
+                            showToast('Item removed from cart');
+                        } catch (error) {
+                            console.error('Failed to remove item:', error);
+                            showToast('Could not remove item.');
+                        }
                     });
                 });
             };
 
             try {
-                renderCartState(getCartItems());
+                const items = await getCartItems();
+                renderCartState(items);
             } catch (error) {
                 renderCartState([]);
             }
