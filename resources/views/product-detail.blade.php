@@ -213,7 +213,7 @@
 
 @push('scripts')
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', async function () {
             const currentType = @json($type);
             const currentId = @json($item->id);
             const quantityEl = document.getElementById('productQty');
@@ -225,7 +225,7 @@
             const similarItems = document.getElementById('similarItems');
             const currentPrice = @json($currentPrice);
             const currentCalories = @json($currentCalories);
-            const store = window.SavoraMockStore;
+            const currentItem = @json($item);
 
             let quantity = 1;
 
@@ -253,38 +253,49 @@
                 icon.classList.toggle('bi-heart', !isActive);
             };
 
-            const loadFavoriteState = () => {
-                if (!isLoggedIn() || !store || !favoriteBtn) return;
-                updateFavoriteState(store.isFavorite(currentType, currentId));
+            const loadFavoriteState = async () => {
+                if (!isLoggedIn() || !favoriteBtn) return;
+                const response = await fetch('/api/favorites', { headers: authHeaders(false) });
+                const payload = await response.json();
+                updateFavoriteState((payload.data || []).some((favorite) => favorite.type === currentType && Number(favorite.item?.id) === Number(currentId)));
             };
 
             window.addEventListener('savora:favorites-updated', loadFavoriteState);
 
-            favoriteBtn?.addEventListener('click', () => {
+            favoriteBtn?.addEventListener('click', async () => {
                 if (!isLoggedIn()) {
                     requireLogin();
                     return;
                 }
 
                 const isActive = favoriteBtn.classList.contains('active');
-                store.toggleFavorite(currentType, currentId);
+                const response = await fetch(isActive ? `/api/favorites/${currentType}/${currentId}` : '/api/favorites', {
+                    method: isActive ? 'DELETE' : 'POST', headers: authHeaders(!isActive),
+                    body: isActive ? undefined : JSON.stringify({ type: currentType, id: currentId }),
+                });
+                if (!response.ok) {
+                    showToast('Unable to update favorites.');
+                    return;
+                }
                 updateFavoriteState(!isActive);
+                window.dispatchEvent(new CustomEvent('savora:favorites-updated'));
                 showToast(isActive ? 'Removed from favorites.' : 'Added to favorites.');
             });
 
-            addToCartBtn?.addEventListener('click', () => {
+            addToCartBtn?.addEventListener('click', async () => {
                 if (!isLoggedIn()) {
                     requireLogin();
                     return;
                 }
 
-                const product = store.findProduct(currentType, currentId);
-                if (!product) {
+                const response = await fetch('/api/cart/items', {
+                    method: 'POST', headers: authHeaders(),
+                    body: JSON.stringify({ type: currentType, id: currentId, quantity }),
+                });
+                if (!response.ok) {
                     showToast('Product unavailable.');
                     return;
                 }
-
-                store.addToCart(product, quantity);
                 refreshHeader();
                 showToast('Item added to cart');
             });
@@ -339,10 +350,10 @@
                 `;
             };
 
-            const loadCompareOptions = () => {
-                if (!store) return;
-
-                const items = store.getProducts().filter((item) => !(item.type === currentType && item.id === currentId));
+            const loadCompareOptions = async () => {
+                const [foodResponse, beverageResponse] = await Promise.all([fetch('/api/food-items?per_page=50'), fetch('/api/beverages?per_page=50')]);
+                const [foodPayload, beveragePayload] = await Promise.all([foodResponse.json(), beverageResponse.json()]);
+                const items = [...(foodPayload.data || []), ...(beveragePayload.data || [])].filter((item) => !(item.type === currentType && item.id === currentId));
                 compareSelect.innerHTML = '<option value="">Choose another item</option>';
                 items.forEach((item) => {
                     const option = document.createElement('option');
@@ -359,15 +370,15 @@
                     }
 
                     const [type, id] = value.split('_');
-                    const item = store.findProduct(type, id);
+                    const item = items.find((entry) => entry.type === type && Number(entry.id) === Number(id));
                     renderComparison(item);
                 });
             };
 
-            const renderSimilarItems = () => {
-                if (!store) return;
-
-                const items = store.getProducts()
+            const renderSimilarItems = async () => {
+                const [foodResponse, beverageResponse] = await Promise.all([fetch('/api/food-items?per_page=10'), fetch('/api/beverages?per_page=10')]);
+                const [foodPayload, beveragePayload] = await Promise.all([foodResponse.json(), beverageResponse.json()]);
+                const items = [...(foodPayload.data || []), ...(beveragePayload.data || [])]
                     .filter((item) => !(item.type === currentType && item.id === currentId))
                     .slice(0, 4);
 

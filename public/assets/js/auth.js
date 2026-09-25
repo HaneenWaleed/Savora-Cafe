@@ -55,7 +55,7 @@
         const loginForm = document.getElementById('loginForm');
 
         if (loginForm) {
-            loginForm.addEventListener('submit', (e) => {
+            loginForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
 
                 const errorsBox = document.getElementById('authErrors');
@@ -78,39 +78,28 @@
                     return;
                 }
 
-                fetch(`${API_BASE}/auth/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password }),
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.token && data.user) {
-                            localStorage.setItem('savora_token', data.token);
-                            localStorage.setItem('savora_user', JSON.stringify(data.user));
-
-                            if (data.user.role === 'admin') {
-                                window.location.href = '/admin';
-                            } else {
-                                window.location.href = '/profile';
-                            }
-                        } else {
-                            showAlert(errorsBox, 'danger', data.message || 'Invalid email or password.');
-                            setLoading(button, false);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Login error:', error);
-                        showAlert(errorsBox, 'danger', 'Unable to connect to the server.');
-                        setLoading(button, false);
+                try {
+                    const response = await fetch(`${API_BASE}/auth/login`, {
+                        method: 'POST',
+                        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password }),
                     });
+                    const payload = await response.json();
+                    if (!response.ok) throw new Error(payload.message || 'Invalid email or password.');
+                    localStorage.setItem('savora_token', payload.token);
+                    localStorage.setItem('savora_user', JSON.stringify(payload.user));
+                    window.location.href = payload.user.role === 'admin' ? '/admin' : '/profile';
+                } catch (error) {
+                    showAlert(errorsBox, 'danger', error.message || 'Unable to sign in.');
+                    setLoading(button, false);
+                }
             });
         }
 
         const registerForm = document.getElementById('registerForm');
 
         if (registerForm) {
-            registerForm.addEventListener('submit', (e) => {
+            registerForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
 
                 const errorsBox = document.getElementById('authErrors');
@@ -143,29 +132,21 @@
                     return;
                 }
 
-                fetch(`${API_BASE}/auth/register`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, email, phone, age, password, password_confirmation: passwordConfirmation }),
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.user) {
-                            showAlert(errorsBox, 'success', 'Account created successfully. Redirecting to login...');
-                            setLoading(button, false);
-                            setTimeout(() => {
-                                window.location.href = '/login';
-                            }, 900);
-                        } else {
-                            showAlert(errorsBox, 'danger', data.message || 'Unable to create your account.');
-                            setLoading(button, false);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Registration error:', error);
-                        showAlert(errorsBox, 'danger', 'Unable to connect to the server.');
-                        setLoading(button, false);
+                try {
+                    const response = await fetch(`${API_BASE}/auth/register`, {
+                        method: 'POST',
+                        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, email, phone, age, password, password_confirmation: passwordConfirmation }),
                     });
+                    const payload = await response.json();
+                    if (!response.ok) throw new Error(payload.message || 'Unable to create your account.');
+                    localStorage.setItem('savora_token', payload.token);
+                    localStorage.setItem('savora_user', JSON.stringify(payload.user));
+                    window.location.href = '/profile';
+                } catch (error) {
+                    showAlert(errorsBox, 'danger', error.message || 'Unable to create your account.');
+                    setLoading(button, false);
+                }
             });
         }
     }

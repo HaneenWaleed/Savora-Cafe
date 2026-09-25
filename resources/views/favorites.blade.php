@@ -22,7 +22,7 @@
                     <i class="bi bi-heart"></i>
                     <span>Favorites</span>
                 </a>
-                <a href="#" class="side-link">
+                <a href="{{ route('preferences') }}" class="side-link">
                     <i class="bi bi-sliders"></i>
                     <span>Preferences</span>
                 </a>
@@ -106,6 +106,8 @@
                 const source = item.product || item.item || item;
                 const productType = item.favorable_type || source?.type || 'food';
                 const productId = Number(item.favorable_id || source?.id ?? item?.id ?? 0);
+                const productType = source?.type || item?.type || 'food';
+                const productId = Number(source?.id ?? item?.id ?? 0);
                 const merged = {
                     ...(source || {}),
                     ...(item || {}),
@@ -113,7 +115,7 @@
 
                 return {
                     ...merged,
-                    id: Number(merged.id ?? productId ?? 0),
+                    id: Number(item?.favorable_id ?? productId ?? 0),
                     type: productType,
                     name: merged.name || source?.name || 'Saved item',
                     price: Number(merged.price ?? source?.price ?? 0),
@@ -200,6 +202,14 @@
                             console.error('Failed to remove favorite:', error);
                             showToast('Could not remove favorite.');
                         }
+                        if (!type || !id) {
+                            return;
+                        }
+                        const response = await fetch(`/api/favorites/${type}/${id}`, { method: 'DELETE', headers: authHeaders(false) });
+                        if (response.ok) {
+                            await syncFavoritesView();
+                            showToast('Removed from favorites.');
+                        }
                     });
                 });
             };
@@ -219,6 +229,16 @@
                 try {
                     const favorites = await loadFavorites();
                     renderFavorites(favorites);
+                    if (!isLoggedIn()) {
+                        renderFavorites([]);
+                        return;
+                    }
+                    const response = await fetch('/api/favorites', { headers: authHeaders(false) });
+                    if (!response.ok) {
+                        throw new Error('Unable to load favorites');
+                    }
+                    const payload = await response.json();
+                    renderFavorites(payload.data || []);
                 } catch (error) {
                     renderFavorites([]);
                 }

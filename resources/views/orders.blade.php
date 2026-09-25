@@ -22,7 +22,7 @@
                     <i class="bi bi-heart"></i>
                     <span>Favorites</span>
                 </a>
-                <a href="#" class="side-link">
+                <a href="{{ route('preferences') }}" class="side-link">
                     <i class="bi bi-sliders"></i>
                     <span>Preferences</span>
                 </a>

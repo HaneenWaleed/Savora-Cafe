@@ -13,6 +13,7 @@ const CATEGORY_ICONS = {
     'cold-drinks': 'bi-snow2',
 };
 
+<<<<<<< HEAD
 function getToken() {
     return localStorage.getItem('savora_token') || '';
 }
@@ -72,6 +73,8 @@ function refreshHeader() {
 
 
 
+=======
+>>>>>>> b847e07 (admin dashboard)
 document.addEventListener('DOMContentLoaded', async () => {
     const categoryGrid = document.getElementById('homeCategoryGrid');
     const featuredGrid = document.getElementById('featuredGrid');
@@ -87,7 +90,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         const { categories, items } = await loadHomeData();
 
         renderCategories(categories);
+<<<<<<< HEAD
         renderHeroSlider(items.length ? items : []);
+=======
+        renderHeroSlider(items);
+>>>>>>> b847e07 (admin dashboard)
         renderFeatured(items);
         renderRecommendations(items);
         renderStats(categories, items);
@@ -100,7 +107,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     bindHeroSlider();
+    await loadFavoriteStates();
 });
+
+async function loadFavoriteStates() {
+    if (!isLoggedIn()) return;
+    const response = await fetch(`${API_BASE}/favorites`, { headers: authHeaders(false) });
+    if (!response.ok) return;
+    const payload = await response.json();
+    const favoriteKeys = new Set((payload.data || []).map((favorite) => `${favorite.type}_${favorite.item?.id}`));
+    document.querySelectorAll('[data-favorite]').forEach((button) => {
+        const key = `${button.dataset.favorite}_${button.dataset.id}`;
+        const active = favoriteKeys.has(key);
+        button.classList.toggle('active', active);
+        const icon = button.querySelector('i');
+        if (icon) icon.className = `bi ${active ? 'bi-heart-fill' : 'bi-heart'}`;
+    });
+}
 
 async function loadHomeData() {
     try {
@@ -374,10 +397,11 @@ function bindHomeActions() {
             }
 
             try {
-                const response = await fetch(`${API_BASE}/favorites`, {
-                    method: 'POST',
-                    headers: authHeaders(),
-                    body: JSON.stringify({ type, id }),
+                const isActive = button.classList.contains('active');
+                const response = await fetch(isActive ? `${API_BASE}/favorites/${type}/${id}` : `${API_BASE}/favorites`, {
+                    method: isActive ? 'DELETE' : 'POST',
+                    headers: authHeaders(!isActive),
+                    body: isActive ? undefined : JSON.stringify({ type, id }),
                 });
 
                 if (!response.ok) {
@@ -388,10 +412,11 @@ function bindHomeActions() {
 
                 const icon = button.querySelector('i');
                 if (icon) {
-                    icon.classList.toggle('bi-heart-fill');
-                    icon.classList.toggle('bi-heart');
+                    icon.className = `bi ${isActive ? 'bi-heart' : 'bi-heart-fill'}`;
                 }
-                showToast('Saved to favorites');
+                button.classList.toggle('active', !isActive);
+                window.dispatchEvent(new CustomEvent('savora:favorites-updated'));
+                showToast(isActive ? 'Removed from favorites' : 'Saved to favorites');
             } catch (error) {
                 showToast('Could not save favorite.');
             }

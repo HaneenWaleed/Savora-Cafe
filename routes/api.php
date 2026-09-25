@@ -3,10 +3,12 @@
 use App\Http\Controllers\Api\Admin\AdminOrderController;
 use App\Http\Controllers\Api\Admin\AdminStatsController;
 use App\Http\Controllers\Api\Admin\AdminUserController;
+use App\Http\Controllers\Api\AiController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BeverageController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\ChatbotController;
 use App\Http\Controllers\Api\FavoriteController;
 use App\Http\Controllers\Api\FoodItemController;
 use App\Http\Controllers\Api\OrderController;
@@ -14,12 +16,10 @@ use App\Http\Controllers\Api\PreferenceController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\RecommendationController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\ChatbotController;
-use App\Http\Controllers\Api\AiController;
 
 Route::get('/', fn () => response()->json([
-    'app'     => 'Savora Cafe API',
-    'status'  => 'ok',
+    'app' => 'Savora Cafe API',
+    'status' => 'ok',
 ]));
 
 // ---------- Auth ----------
@@ -37,14 +37,14 @@ Route::apiResource('categories', CategoryController::class)->only(['index', 'sho
 Route::apiResource('food-items', FoodItemController::class)->only(['index', 'show']);
 Route::apiResource('beverages', BeverageController::class)->only(['index', 'show']);
 
-// Profile & Preferences
-Route::get('profile', [ProfileController::class, 'show']);
-Route::put('profile', [ProfileController::class, 'update']);
-Route::put('profile/password', [ProfileController::class, 'updatePassword']);
-Route::get('profile/preferences', [PreferenceController::class, 'show']);
-Route::put('profile/preferences', [PreferenceController::class, 'update']);
-
 Route::middleware('auth:sanctum')->group(function () {
+    // Profile & Preferences
+    Route::get('profile', [ProfileController::class, 'show']);
+    Route::put('profile', [ProfileController::class, 'update']);
+    Route::put('profile/password', [ProfileController::class, 'updatePassword']);
+    Route::get('profile/preferences', [PreferenceController::class, 'show']);
+    Route::put('profile/preferences', [PreferenceController::class, 'update']);
+
     // Favorites
     Route::get('favorites', [FavoriteController::class, 'index']);
     Route::post('favorites', [FavoriteController::class, 'store']);
@@ -81,11 +81,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('recommendations/surprise', [RecommendationController::class, 'surprise']);
     Route::get('recommendations/healthy', [RecommendationController::class, 'healthy']);
 
-    
 });
 
 // ---------- Admin ----------
-Route::middleware('admin')->group(function () {
+Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::apiResource('categories', CategoryController::class)->except(['index', 'show']);
     Route::apiResource('food-items', FoodItemController::class)->except(['index', 'show']);
     Route::apiResource('beverages', BeverageController::class)->except(['index', 'show']);

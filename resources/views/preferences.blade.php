@@ -174,6 +174,11 @@
             const form = document.getElementById('preferencesForm');
             const errorBox = document.getElementById('preferencesErrors');
 
+            if (!isLoggedIn()) {
+                window.location.href = '/login';
+                return;
+            }
+
             const collectCheckedValues = (selector) => Array.from(document.querySelectorAll(`${selector}:checked`)).map((input) => input.value);
 
             const parseCsv = (value) => String(value || '')
@@ -223,12 +228,17 @@
 
             try {
                 const response = await fetch('/api/profile/preferences', { headers: authHeaders() });
-                if (response.ok) {
-                    const data = await response.json();
-                    applyPreferenceData(data.preference || {});
+                if (response.status === 401) {
+                    window.location.href = '/login';
+                    return;
                 }
+                if (!response.ok) {
+                    throw new Error('Unable to load preferences.');
+                }
+                const data = await response.json();
+                applyPreferenceData(data.preference || {});
             } catch (error) {
-                // Keep form empty until the user saves a valid set.
+                errorBox.innerHTML = '<div class="error-item"><i class="bi bi-exclamation-circle-fill"></i><span>Unable to load your saved preferences.</span></div>';
             }
 
             form?.addEventListener('submit', async (event) => {
@@ -262,7 +272,6 @@
                     }
 
                     const savedPreference = data.preference || payload;
-                    localStorage.setItem('savora_preferences_snapshot', JSON.stringify(savedPreference));
                     window.dispatchEvent(new CustomEvent('savora:preferences-updated', { detail: savedPreference }));
                     showToast('Preferences saved successfully.');
                     applyPreferenceData(savedPreference);

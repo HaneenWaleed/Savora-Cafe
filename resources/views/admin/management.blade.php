@@ -1,0 +1,18 @@
+@extends('layouts.admin')
+
+@section('title', ucfirst($page) . ' - Admin - Savora Cafeteria')
+
+@section('admin_content')
+    <section class="admin-page-heading"><div><span class="admin-eyebrow">Admin management</span><h1>{{ $page === 'food' ? 'Food Items' : ucfirst($page) }}</h1><p>Manage live records from the Savora database.</p></div>@if ($page !== 'orders' && $page !== 'customers')<button class="admin-primary-button" data-crud-create="{{ $page === 'food' ? 'food' : ($page === 'beverages' ? 'beverage' : $page) }}"><i class="bi bi-plus-lg"></i> Add {{ $page === 'food' ? 'food item' : rtrim($page, 's') }}</button>@endif</section>
+    <div id="adminNotice" class="admin-notice" role="status"></div>
+    @if ($page === 'users' || $page === 'customers')
+        <section class="admin-management-section" data-management="users"><div class="admin-toolbar"><input data-table-search="users" type="search" placeholder="Search name, email or phone"><select id="userRoleFilter"><option value="{{ $page === 'customers' ? 'customer' : '' }}">{{ $page === 'customers' ? 'Customers' : 'All roles' }}</option>@if ($page === 'users')<option value="customer">Customers</option><option value="admin">Admins</option>@endif</select></div><div class="admin-table-wrap"><table class="admin-data-table"><thead><tr><th>User</th><th>Contact</th><th>Role</th><th>Orders</th><th>Spent</th><th>Joined</th><th></th></tr></thead><tbody id="usersTableBody"></tbody></table></div><div id="usersPagination" class="admin-pagination"></div></section>
+    @elseif ($page === 'food' || $page === 'beverages')
+        <section class="admin-management-section" data-management="{{ $page === 'food' ? 'food' : 'beverage' }}"><div class="admin-toolbar"><input data-table-search="{{ $page === 'food' ? 'food' : 'beverage' }}" type="search" placeholder="Search {{ $page === 'food' ? 'food items' : 'beverages' }}"><select data-category-filter="{{ $page === 'food' ? 'food' : 'beverage' }}"><option value="">All categories</option></select></div><div class="admin-table-wrap"><table class="admin-data-table"><thead><tr><th>Item</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th></th></tr></thead><tbody id="{{ $page === 'food' ? 'foodTableBody' : 'beveragesTableBody' }}"></tbody></table></div><div id="{{ $page === 'food' ? 'food' : 'beverages' }}Pagination" class="admin-pagination"></div></section>
+    @elseif ($page === 'categories')
+        <section class="admin-management-section" data-management="categories"><div class="admin-toolbar"><input data-table-search="categories" type="search" placeholder="Search categories"></div><div class="admin-table-wrap"><table class="admin-data-table"><thead><tr><th>Name</th><th>Type</th><th>Food items</th><th>Beverages</th><th></th></tr></thead><tbody id="categoriesTableBody"></tbody></table></div></section>
+    @else
+        <section class="admin-management-section" data-management="orders"><div class="admin-toolbar"><input data-table-search="orders" type="search" placeholder="Search customer or email"><select id="orderStatusFilter"><option value="">All statuses</option><option value="pending">Pending</option><option value="preparing">Preparing</option><option value="ready">Ready</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select><input id="orderDateFilter" type="date"></div><div class="admin-table-wrap"><table class="admin-data-table"><thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Date</th><th></th></tr></thead><tbody id="ordersTableBody"></tbody></table></div><div id="ordersPagination" class="admin-pagination"></div></section>
+    @endif
+    @include('admin._forms', ['page' => $page])
+@endsection

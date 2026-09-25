@@ -50,14 +50,14 @@
             <div class="filter-group">
                 <label>Price Range</label>
                 <div class="d-flex gap-2 align-items-center">
-                    <input type="range" id="minPrice" min="0" max="300" value="0" step="5" class="form-range">
+                    <input type="range" id="minPrice" min="0" max="100000" value="0" step="5" class="form-range">
                 </div>
                 <div class="d-flex gap-2 align-items-center">
-                    <input type="range" id="maxPrice" min="0" max="300" value="300" step="5" class="form-range">
+                    <input type="range" id="maxPrice" min="0" max="100000" value="100000" step="5" class="form-range">
                 </div>
                 <div class="d-flex justify-content-between small text-muted">
                     <span id="minPriceLabel">0 EGP</span>
-                    <span id="maxPriceLabel">300 EGP</span>
+                    <span id="maxPriceLabel">100000 EGP</span>
                 </div>
             </div>
 

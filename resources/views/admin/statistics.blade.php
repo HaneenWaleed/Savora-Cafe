@@ -1,0 +1,10 @@
+@extends('layouts.admin')
+
+@section('title', 'Statistics - Admin - Savora Cafeteria')
+
+@section('admin_content')
+    <section class="admin-page-heading"><div><span class="admin-eyebrow">Business intelligence</span><h1>Statistics</h1><p>Database-backed sales, customer, inventory, and category analytics.</p></div></section>
+    <div id="adminNotice" class="admin-notice"></div>
+    <section class="admin-stat-grid"><article class="admin-stat-card"><span class="admin-stat-icon terracotta"><i class="bi bi-cash-stack"></i></span><div><small>Total revenue</small><strong data-stat="sales_total">--</strong></div></article><article class="admin-stat-card"><span class="admin-stat-icon amber"><i class="bi bi-bag-check"></i></span><div><small>Total orders</small><strong data-stat="orders_count">--</strong></div></article><article class="admin-stat-card"><span class="admin-stat-icon green"><i class="bi bi-people"></i></span><div><small>Customers</small><strong data-stat="customers_count">--</strong></div></article><article class="admin-stat-card"><span class="admin-stat-icon olive"><i class="bi bi-box-seam"></i></span><div><small>Low stock</small><strong data-stat="low_stock_count">--</strong></div></article></section>
+    <section class="admin-dashboard-grid"><article class="admin-panel admin-panel-wide"><div class="admin-panel-heading"><div><span class="admin-eyebrow">Revenue trend</span><h2>Sales over 30 days</h2></div></div><div id="salesChart" class="admin-sales-chart"></div></article><article class="admin-panel"><div class="admin-panel-heading"><div><span class="admin-eyebrow">Fulfillment</span><h2>Order status</h2></div></div><div id="statusChart" class="admin-status-list"></div></article><article class="admin-panel"><div class="admin-panel-heading"><div><span class="admin-eyebrow">Products</span><h2>Popular items</h2></div></div><div id="popularItems" class="admin-mini-list"></div></article><article class="admin-panel admin-panel-wide"><div class="admin-panel-heading"><div><span class="admin-eyebrow">Categories</span><h2>Category activity</h2></div></div><div id="categoryStats" class="admin-mini-list"></div></article></section>
+@endsection

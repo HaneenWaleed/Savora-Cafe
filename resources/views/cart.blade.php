@@ -22,7 +22,7 @@
                     <i class="bi bi-heart"></i>
                     <span>Favorites</span>
                 </a>
-                <a href="#" class="side-link">
+                <a href="{{ route('preferences') }}" class="side-link">
                     <i class="bi bi-sliders"></i>
                     <span>Preferences</span>
                 </a>
@@ -146,6 +146,14 @@
                     const quantity = Number(item.quantity || 1);
                     return sum + (price * quantity);
                 }, 0).toFixed(2));
+                const response = await fetch('/api/cart', { headers: authHeaders(false) });
+                if (!response.ok) throw new Error('Unable to load cart');
+                const payload = await response.json();
+                return payload.items || [];
+            };
+
+            const renderCartState = (items = []) => {
+                const subtotal = Number(items.reduce((sum, item) => sum + Number(item.line_total || 0), 0).toFixed(2));
                 const delivery = subtotal > 0 ? 25 : 0;
                 const tax = subtotal > 0 ? Number((subtotal * 0.05).toFixed(2)) : 0;
                 const total = subtotal + delivery + tax;
@@ -173,6 +181,12 @@
                     const subtotalValue = price * quantity;
                     const image = product.image
                         ? `/storage/${String(product.image).replace(/^\//, '')}`
+                    const product = item.product || {};
+                    const price = Number(item.unit_price || 0);
+                    const quantity = Number(item.quantity || 1);
+                    const subtotalValue = Number(item.line_total || 0);
+                    const image = product.image_url
+                        ? product.image_url
                         : 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=400&q=80';
                     const itemType = item.purchasable_type || product.type || 'food';
                     const itemId = item.purchasable_id || product.id || item.id;
@@ -184,6 +198,8 @@
                                 <div class="cart-header">
                                     <h3>${product.name || 'Cart item'}</h3>
                                     <button type="button" class="delete-btn" data-id="${itemId}" data-type="${itemType}" aria-label="Remove item">
+                                        <h3>${product.name || 'Cart item'}</h3>
+                                            <button type="button" class="delete-btn" data-id="${item.id}" aria-label="Remove item">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </div>
@@ -193,6 +209,9 @@
                                         <button type="button" class="qty-btn qty-decrease" data-id="${itemId}" data-type="${itemType}" ${quantity <= 1 ? 'disabled' : ''}>-</button>
                                         <span>${quantity}</span>
                                         <button type="button" class="qty-btn qty-increase" data-id="${itemId}" data-type="${itemType}">+</button>
+                                        <button type="button" class="qty-btn qty-decrease" data-id="${item.id}" data-quantity="${quantity - 1}" ${quantity <= 1 ? 'disabled' : ''}>-</button>
+                                        <span>${quantity}</span>
+                                        <button type="button" class="qty-btn qty-increase" data-id="${item.id}" data-quantity="${quantity + 1}">+</button>
                                     </div>
                                     <strong>${subtotalValue.toFixed(2)} EGP</strong>
                                 </div>
@@ -229,6 +248,11 @@
                             console.error('Failed to update quantity:', error);
                             showToast('Could not update cart.');
                         }
+                        const response = await fetch(`/api/cart/items/${button.dataset.id}`, {
+                            method: 'PATCH', headers: authHeaders(),
+                            body: JSON.stringify({ quantity: Number(button.dataset.quantity) }),
+                        });
+                        if (response.ok) renderCartState((await response.json()).items || []);
                     });
                 });
 
@@ -256,6 +280,8 @@
                             console.error('Failed to remove item:', error);
                             showToast('Could not remove item.');
                         }
+                        const response = await fetch(`/api/cart/items/${button.dataset.id}`, { method: 'DELETE', headers: authHeaders(false) });
+                        if (response.ok) renderCartState((await response.json()).items || []);
                     });
                 });
             };
@@ -263,9 +289,16 @@
             try {
                 const items = await getCartItems();
                 renderCartState(items);
+                renderCartState(await getCartItems());
             } catch (error) {
                 renderCartState([]);
             }
+
+            document.querySelector('.checkout-btn')?.addEventListener('click', async () => {
+                const response = await fetch('/api/orders', { method: 'POST', headers: authHeaders(), body: JSON.stringify({}) });
+                if (response.ok) window.location.href = '/orders';
+                else showToast('Unable to place the order. Please review your cart.');
+            });
         });
     </script>
 @endpush

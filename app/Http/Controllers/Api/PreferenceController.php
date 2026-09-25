@@ -5,11 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdatePreferenceRequest;
 use App\Http\Resources\PreferenceResource;
-use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class PreferenceController extends Controller
@@ -21,37 +18,10 @@ class PreferenceController extends Controller
         'disliked_ingredients',
     ];
 
-    private function resolveUser(Request $request): ?User
-    {
-        $user = $request->user();
-        if ($user) {
-            return $user;
-        }
-
-        $email = trim((string) ($request->header('X-User-Email') ?: $request->input('user_email') ?: ''));
-        if ($email === '') {
-            return null;
-        }
-
-        return User::firstOrCreate(
-            ['email' => strtolower($email)],
-            [
-                'name' => ucfirst(str_replace(['.', '_', '-'], ' ', explode('@', $email)[0])) ?: 'Customer',
-                'password' => Hash::make(Str::random(16)),
-                'role' => 'customer',
-            ]
-        );
-    }
-
     public function show(Request $request): JsonResponse
     {
-        $user = $this->resolveUser($request);
+        $preference = $request->user()->preference;
 
-        if (! $user) {
-            return response()->json(['message' => 'Unauthenticated.'], 401);
-        }
-
-        $preference = $user->preference;
         return response()->json([
             'preference' => $preference ? new PreferenceResource($preference) : null,
         ]);
@@ -59,14 +29,10 @@ class PreferenceController extends Controller
 
     public function update(UpdatePreferenceRequest $request): JsonResponse
     {
-        $user       = $this->resolveUser($request);
-
-        if (! $user) {
-            return response()->json(['message' => 'Unauthenticated.'], 401);
-        }
+        $user = $request->user();
 
         $preference = $user->preference;
-        $data       = $request->validated();
+        $data = $request->validated();
 
         foreach (self::TEXT_LISTS as $key) {
             if (array_key_exists($key, $data)) {
@@ -80,20 +46,20 @@ class PreferenceController extends Controller
             }
         }
 
-        $liked    = $data['favorite_ingredients'] ?? $preference?->favorite_ingredients ?? [];
+        $liked = $data['favorite_ingredients'] ?? $preference?->favorite_ingredients ?? [];
         $disliked = $data['disliked_ingredients'] ?? $preference?->disliked_ingredients ?? [];
-        $overlap  = array_intersect($liked, $disliked);
+        $overlap = array_intersect($liked, $disliked);
 
         if (! empty($overlap)) {
             throw ValidationException::withMessages([
-                'disliked_ingredients' => ['These ingredients are in both lists: ' . implode(', ', $overlap)],
+                'disliked_ingredients' => ['These ingredients are in both lists: '.implode(', ', $overlap)],
             ]);
         }
 
         $preference = $user->preference()->updateOrCreate(['user_id' => $user->id], $data);
 
         return response()->json([
-            'message'    => 'Preferences saved.',
+            'message' => 'Preferences saved.',
             'preference' => new PreferenceResource($preference),
         ]);
     }

@@ -11,10 +11,12 @@ class FavoriteResource extends JsonResource
     public function toArray(Request $request): array
     {
         $item = $this->favorable;
+
         return [
-            'id'         => $this->id,
-            'type'       => $this->favorable_type,
-            'item'       => $item
+            'id' => $this->id,
+            'type' => $this->favorable_type,
+            'favorable_id' => $this->favorable_id,
+            'item' => $item
                 ? ($item instanceof FoodItem ? new FoodItemResource($item) : new BeverageResource($item))
                 : null,
             'created_at' => $this->created_at?->toISOString(),

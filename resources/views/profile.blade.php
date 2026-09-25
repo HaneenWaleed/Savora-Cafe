@@ -453,21 +453,15 @@
             };
 
             const hydrateProfile = async () => {
-                const savedUser = window.SavoraMockStore?.getCurrentUser?.() || JSON.parse(localStorage.getItem('savora_user') || 'null');
-                let user = savedUser;
+                let user = null;
 
                 try {
                     const response = await fetch('/api/profile', { headers: authHeaders() });
                     if (response.ok) {
                         const data = await response.json();
-                        user = data.user || user;
-                        if (user && user.email) {
-                            localStorage.setItem('savora_user', JSON.stringify(user));
-                        }
+                        user = data.user || null;
                     }
-                } catch (error) {
-                    // Fallback to the existing mock user data.
-                }
+                } catch (error) { return; }
 
                 if (!user) {
                     return;
@@ -505,32 +499,25 @@
             };
 
             const hydratePreferences = async () => {
-                const cachedPreference = JSON.parse(localStorage.getItem('savora_preferences_snapshot') || 'null');
-                if (cachedPreference) {
-                    renderProfilePreferences(cachedPreference);
-                }
-
                 try {
                     const response = await fetch('/api/profile/preferences', { headers: authHeaders() });
                     if (!response.ok) {
-                        renderProfilePreferences(cachedPreference || {});
+                        renderProfilePreferences({});
                         return;
                     }
 
                     const data = await response.json();
-                    const preference = data.preference || cachedPreference || {};
-                    localStorage.setItem('savora_preferences_snapshot', JSON.stringify(preference));
+                    const preference = data.preference || {};
                     renderProfilePreferences(preference);
                 } catch (error) {
-                    renderProfilePreferences(cachedPreference || {});
+                    renderProfilePreferences({});
                 }
             };
 
             window.addEventListener('savora:preferences-updated', (event) => {
-                const preference = event?.detail || JSON.parse(localStorage.getItem('savora_preferences_snapshot') || 'null');
+                const preference = event?.detail;
                 if (preference) {
                     renderProfilePreferences(preference);
-                    localStorage.setItem('savora_preferences_snapshot', JSON.stringify(preference));
                 }
             });
 
@@ -570,10 +557,6 @@
                         const firstError = data.errors ? Object.values(data.errors)[0]?.[0] : (data.message || 'Unable to update profile.');
                         errorBox.innerHTML = `<div class="error-item"><i class="bi bi-exclamation-circle-fill"></i><span>${firstError}</span></div>`;
                         return;
-                    }
-
-                    if (data.user && data.user.email) {
-                        localStorage.setItem('savora_user', JSON.stringify(data.user));
                     }
 
                     showToast('Profile updated successfully.');

@@ -6,7 +6,11 @@ function getToken() {
 
 function getUser() {
     const raw = localStorage.getItem('savora_user');
-    return raw ? JSON.parse(raw) : null;
+    try {
+        return raw ? JSON.parse(raw) : null;
+    } catch (error) {
+        return null;
+    }
 }
 
 function isLoggedIn() {
@@ -15,10 +19,8 @@ function isLoggedIn() {
 
 function authHeaders(json = true) {
     const headers = { Accept: 'application/json' };
-    const user = getUser();
     if (json) headers['Content-Type'] = 'application/json';
     if (getToken()) headers['Authorization'] = `Bearer ${getToken()}`;
-    if (user?.email) headers['X-User-Email'] = user.email;
     return headers;
 }
 
@@ -27,6 +29,7 @@ async function fetchDashboardData() {
     const token = getToken();
 
     if (!token || !user) {
+    if (!getToken()) {
         return {
             authenticated: false,
             user: null,
@@ -73,6 +76,103 @@ async function fetchDashboardData() {
             cart: { items: [], items_count: 0, total: 0 },
             favorites: [],
             orders: [],
+    const [userResponse, cartResponse, favoritesResponse, ordersResponse] = await Promise.all([
+        fetch(`${API_BASE}/auth/me`, { headers: authHeaders(false) }),
+        fetch(`${API_BASE}/cart`, { headers: authHeaders(false) }),
+        fetch(`${API_BASE}/favorites`, { headers: authHeaders(false) }),
+        fetch(`${API_BASE}/orders`, { headers: authHeaders(false) }),
+    ]);
+    if ([userResponse, cartResponse, favoritesResponse, ordersResponse].some((response) => response.status === 401)) {
+        return { authenticated: false, user: null, cart: { items: [], items_count: 0, total: 0 }, favorites: [], orders: [] };
+    }
+    const userPayload = await userResponse.json();
+    const cart = await cartResponse.json();
+    const favoritesPayload = await favoritesResponse.json();
+    const ordersPayload = await ordersResponse.json();
+    const user = userPayload.user;
+    localStorage.setItem('savora_user', JSON.stringify(user));
+
+    return {
+        authenticated: true,
+        user,
+        cart: {
+            items: cart.items || [],
+            items_count: cart.items_count || 0,
+            total: cart.total || 0,
+        },
+        favorites: favoritesPayload.data || [],
+        orders: ordersPayload.data || [],
+    };
+}
+
+function handleCartStateChange() {
+    refreshHeader();
+}
+
+window.addEventListener('savora:cart-updated', handleCartStateChange);
+window.addEventListener('savora:favorites-updated', async () => {
+    const favoriteCount = document.getElementById('favoriteCount');
+    if (favoriteCount) {
+        const dashboard = await fetchDashboardData();
+        favoriteCount.textContent = dashboard.authenticated ? dashboard.favorites.length : 0;
+    }
+});
+window.addEventListener('savora:orders-updated', () => {
+    const ordersList = document.getElementById('ordersList');
+    if (ordersList) {
+        const syncOrdersView = async () => {
+            const dashboard = await fetchDashboardData();
+            const orders = dashboard.authenticated ? dashboard.orders : [];
+            const ordersCount = document.getElementById('ordersCount');
+            const favoriteCount = document.getElementById('favoriteCount');
+            const cartCount = document.getElementById('cartCount');
+            const profileName = document.getElementById('profileName');
+
+            if (ordersCount) ordersCount.textContent = orders.length;
+            if (favoriteCount) favoriteCount.textContent = dashboard.authenticated ? dashboard.favorites.length : 0;
+            if (cartCount) cartCount.textContent = dashboard.authenticated ? dashboard.cart.items_count || 0 : 0;
+            if (profileName) profileName.textContent = dashboard.authenticated && dashboard.user ? dashboard.user.name || 'Guest' : 'Guest';
+
+            if (!orders.length) {
+                ordersList.innerHTML = `
+                    <div class="empty-state">
+                        <h3>No orders yet</h3>
+                        <p>Your recent orders and order history will appear here.</p>
+                        <a href="/menu" class="btn btn-savora">Start ordering</a>
+                    </div>
+                `;
+                return;
+            }
+
+            ordersList.innerHTML = orders.map((order) => {
+                const item = order.items && order.items.length ? order.items[0] : null;
+                const itemName = item && item.name ? item.name : 'Savora order';
+                const image = item && item.image ? item.image : 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=400&q=80';
+                const total = Number(order.totalPrice || order.total_price || 0);
+                const date = order.date || order.created_at ? new Date(order.date || order.created_at).toLocaleDateString('en-GB', {
+                    day: '2-digit', month: 'short', year: 'numeric'
+                }) : 'Recent';
+                const status = (order.status || 'pending').toString();
+
+                return `
+                    <div class="cart-item">
+                        <div class="cart-image" style="background-image:url('${image}')"></div>
+                        <div class="cart-details">
+                            <div class="cart-header">
+                                <h3>Order #${order.id}</h3>
+                                <span class="dot-badge">${status}</span>
+                            </div>
+                            <p>${itemName} · ${order.items ? order.items.length : 0} items · Total ${total} EGP</p>
+                            <div class="cart-actions">
+                                <div class="qty-box">
+                                    <span>${date}</span>
+                                </div>
+                                <strong>${(order.paymentStatus || order.payment_status || 'pending').toString()}</strong>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         };
     }
 }
@@ -140,6 +240,14 @@ async function refreshHeader() {
             } else {
                 cartBadge.classList.add('d-none');
             }
+    const dashboard = await fetchDashboardData();
+    const count = dashboard.cart?.items_count || 0;
+    if (cartBadge) {
+        cartBadge.textContent = String(count);
+        if (count > 0) {
+            cartBadge.classList.remove('d-none');
+        } else {
+            cartBadge.classList.add('d-none');
         }
     } catch (error) {
         cartBadge?.classList.add('d-none');
@@ -155,6 +263,7 @@ document.getElementById('logoutBtn')?.addEventListener('click', async () => {
     } catch (error) {
         console.error('Logout error:', error);
     }
+    await fetch(`${API_BASE}/auth/logout`, { method: 'POST', headers: authHeaders(false) }).catch(() => {});
     localStorage.removeItem('savora_token');
     localStorage.removeItem('savora_user');
     document.cookie = 'savora_user_email=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
@@ -214,6 +323,9 @@ document.getElementById('aiQuerySubmit')?.addEventListener('click', async () => 
         }
 
         resultBox.innerHTML = '<p class="text-muted small">No matching items found.</p>';
+        const response = await fetch(`${API_BASE}/ai/search`, { method: 'POST', headers: authHeaders(), body: JSON.stringify({ query }) });
+        const payload = await response.json();
+        resultBox.textContent = payload.message || 'No matching items found.';
     } catch (error) {
         console.error('Search error:', error);
         resultBox.innerHTML = '<p class="text-danger small">Cannot connect to the server.</p>';

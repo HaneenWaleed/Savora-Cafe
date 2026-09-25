@@ -4,7 +4,7 @@ const state = {
     type: '',
     search: '',
     minPrice: 0,
-    maxPrice: 300,
+    maxPrice: 100000,
     spicyLevel: '',
     maxCalories: '',
     availableOnly: false,
@@ -98,11 +98,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadCategories() {
+<<<<<<< HEAD
     try {
         const response = await fetch(`${API_BASE}/categories`);
         const data = response.ok ? await response.json() : { data: [] };
         const categories = Array.isArray(data.data) ? data.data : [];
         state.categories = categories;
+=======
+    const response = await fetch('/api/categories');
+    const payload = await response.json();
+    const categories = payload.data || [];
+    state.categories = categories;
+>>>>>>> b847e07 (admin dashboard)
 
         const wrap = document.getElementById('categoryTabs');
         wrap.innerHTML = '';
@@ -134,12 +141,17 @@ function selectCategory(id, btnEl) {
     document.querySelectorAll('.cat-tab').forEach((b) => b.classList.remove('active'));
     btnEl.classList.add('active');
     state.categoryId = id;
+    state.type = btnEl.dataset.type || '';
+    document.querySelectorAll('#typeToggle button').forEach((button) => {
+        button.classList.toggle('active', button.dataset.type === state.type);
+    });
     state.page = 1;
     loadMenu();
 }
 
 async function loadFavorites() {
     if (!isLoggedIn()) return;
+<<<<<<< HEAD
     try {
         const response = await fetch(`${API_BASE}/favorites`, { headers: authHeaders() });
         const data = response.ok ? await response.json() : { data: [] };
@@ -149,6 +161,11 @@ async function loadFavorites() {
         console.error('Failed to load favorites:', error);
         state.favoritesSet = new Set();
     }
+=======
+    const response = await fetch('/api/favorites', { headers: authHeaders(false) });
+    const payload = await response.json();
+    state.favoritesSet = new Set((payload.data || []).map((fav) => `${fav.type}_${Number(fav.item?.id)}`));
+>>>>>>> b847e07 (admin dashboard)
 }
 
 
@@ -165,6 +182,7 @@ async function toggleFavorite(type, id, btnEl) {
     btnEl.classList.add('pulse');
     setTimeout(() => btnEl.classList.remove('pulse'), 350);
 
+<<<<<<< HEAD
     try {
         const response = await fetch(`${API_BASE}/favorites`, {
             method: isActive ? 'DELETE' : 'POST',
@@ -211,6 +229,33 @@ async function loadCart() {
     } catch (error) {
         console.error('Failed to load cart:', error);
     }
+=======
+    const response = await fetch(isActive ? `/api/favorites/${type}/${id}` : '/api/favorites', {
+        method: isActive ? 'DELETE' : 'POST',
+        headers: authHeaders(!isActive),
+        body: isActive ? undefined : JSON.stringify({ type, id }),
+    });
+    if (!response.ok) {
+        showToast('Unable to update favorites.');
+        return;
+    }
+    state.favoritesSet[isActive ? 'delete' : 'add'](key);
+
+    btnEl.classList.toggle('active', !isActive);
+    const icon = btnEl.querySelector('i');
+    if (icon) icon.className = `bi ${!isActive ? 'bi-heart-fill' : 'bi-heart'}`;
+    window.dispatchEvent(new CustomEvent('savora:favorites-updated'));
+}
+
+async function loadCart() {
+    state.cartMap = {};
+    if (!isLoggedIn()) return;
+    const response = await fetch('/api/cart', { headers: authHeaders(false) });
+    const payload = await response.json();
+    (payload.items || []).forEach((item) => {
+        state.cartMap[`${item.type}_${Number(item.product?.id)}`] = { id: item.id, quantity: Number(item.quantity || 1) };
+    });
+>>>>>>> b847e07 (admin dashboard)
 }
 
 async function addToCart(type, id) {
@@ -219,6 +264,7 @@ async function addToCart(type, id) {
         return;
     }
 
+<<<<<<< HEAD
     try {
         const response = await fetch(`${API_BASE}/cart/items`, {
             method: 'POST',
@@ -240,6 +286,24 @@ async function addToCart(type, id) {
         console.error('Failed to add to cart:', error);
         showToast('Could not add to cart.');
     }
+=======
+    const product = state.itemsByKey[`${type}_${id}`];
+    if (!product) return;
+
+    const response = await fetch('/api/cart/items', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ type, id, quantity: 1 }),
+    });
+    if (!response.ok) {
+        showToast('Unable to add this item to your cart.');
+        return;
+    }
+    await loadCart();
+    refreshHeader();
+    updateCardFooterByKey(`${type}_${id}`);
+    showToast(`${product.name} added to cart.`);
+>>>>>>> b847e07 (admin dashboard)
 }
 
 async function changeQuantity(type, id, delta) {
@@ -249,6 +313,7 @@ async function changeQuantity(type, id, delta) {
 
     const nextQty = Number(entry.quantity || 1) + Number(delta || 0);
 
+<<<<<<< HEAD
     try {
         if (nextQty <= 0) {
             const response = await fetch(`${API_BASE}/cart/items/${key}`, {
@@ -266,6 +331,23 @@ async function changeQuantity(type, id, delta) {
             if (!response.ok) throw new Error('Failed to update quantity');
             state.cartMap[key].quantity = nextQty;
         }
+=======
+    if (nextQty <= 0) {
+        await fetch(`/api/cart/items/${entry.id}`, { method: 'DELETE', headers: authHeaders(false) });
+        delete state.cartMap[key];
+    } else {
+        const response = await fetch(`/api/cart/items/${entry.id}`, {
+            method: 'PATCH',
+            headers: authHeaders(),
+            body: JSON.stringify({ quantity: nextQty }),
+        });
+        if (!response.ok) {
+            showToast('Unable to update cart quantity.');
+            return;
+        }
+        state.cartMap[key].quantity = nextQty;
+    }
+>>>>>>> b847e07 (admin dashboard)
 
         refreshHeader();
         updateCardFooterByKey(key);
@@ -287,6 +369,7 @@ function updateCardFooterByKey(key) {
 }
 
 async function loadRecommendations() {
+<<<<<<< HEAD
     if (!isLoggedIn()) return;
     try {
         const response = await fetch(`${API_BASE}/recommendations`, { headers: authHeaders() });
@@ -300,6 +383,12 @@ async function loadRecommendations() {
             state.matchMap[`${item.type}_${item.id}`] = matchPercentage;
             return { item, match_percentage: matchPercentage };
         });
+=======
+    const response = await fetch('/api/recommendations?limit=10', { headers: authHeaders(false) });
+    if (!response.ok) return;
+    const payload = await response.json();
+    const list = payload.data || [];
+>>>>>>> b847e07 (admin dashboard)
 
         const section = document.getElementById('recommendedSection');
         if (section && list.length) section.classList.remove('d-none');
@@ -457,7 +546,7 @@ function resetFilters() {
     state.type = '';
     state.search = '';
     state.minPrice = 0;
-    state.maxPrice = 300;
+    state.maxPrice = 100000;
     state.spicyLevel = '';
     state.maxCalories = '';
     state.availableOnly = false;
@@ -470,9 +559,9 @@ function resetFilters() {
     document.querySelectorAll('.cat-tab').forEach((b, i) => b.classList.toggle('active', i === 0));
     document.querySelectorAll('#typeToggle button').forEach((b, i) => b.classList.toggle('active', i === 0));
     document.getElementById('minPrice').value = 0;
-    document.getElementById('maxPrice').value = 300;
+    document.getElementById('maxPrice').value = 100000;
     document.getElementById('minPriceLabel').textContent = '0 EGP';
-    document.getElementById('maxPriceLabel').textContent = '300 EGP';
+    document.getElementById('maxPriceLabel').textContent = '100000 EGP';
     document.querySelectorAll('#spicyLevels button').forEach((b, i) => b.classList.toggle('active', i === 0));
     document.getElementById('maxCalories').value = '';
     document.getElementById('availableOnly').checked = false;
@@ -489,11 +578,31 @@ function debounce(fn, delay) {
 async function loadMenu() {
     document.getElementById('resultsCount').textContent = 'Loading...';
 
+<<<<<<< HEAD
     try {
         const [foodResponse, beverageResponse] = await Promise.all([
             fetch(`${API_BASE}/food-items`),
             fetch(`${API_BASE}/beverages`),
         ]);
+=======
+    const query = new URLSearchParams({
+        per_page: '50',
+        sort: state.sort === 'match_desc' ? 'newest' : state.sort,
+        ...(state.categoryId ? { category_id: state.categoryId } : {}),
+        ...(state.search ? { search: state.search } : {}),
+        ...(state.minPrice ? { min_price: state.minPrice } : {}),
+        ...(state.maxPrice < 100000 ? { max_price: state.maxPrice } : {}),
+        ...(state.maxCalories ? { max_calories: state.maxCalories } : {}),
+        ...(state.spicyLevel !== '' ? { spicy_level: state.spicyLevel } : {}),
+        ...(state.availableOnly ? { available: '1' } : {}),
+    });
+    const endpoints = state.type
+        ? [`/api/${state.type === 'food' ? 'food-items' : 'beverages'}?${query}`]
+        : [`/api/food-items?${query}`, `/api/beverages?${query}`];
+    const items = (await Promise.all(endpoints.map((endpoint) => fetchAllPages(endpoint))))
+        .flat();
+    let merged = [...items];
+>>>>>>> b847e07 (admin dashboard)
 
         const foodData = foodResponse.ok ? await foodResponse.json() : { data: [] };
         const beverageData = beverageResponse.ok ? await beverageResponse.json() : { data: [] };
@@ -547,6 +656,24 @@ async function loadMenu() {
         state.allItems = [];
         renderGrid();
     }
+}
+
+async function fetchAllPages(endpoint) {
+    const items = [];
+    let nextUrl = endpoint;
+
+    while (nextUrl) {
+        const response = await fetch(nextUrl);
+        if (!response.ok) {
+            throw new Error(`Unable to load menu items: ${response.status}`);
+        }
+
+        const payload = await response.json();
+        items.push(...(payload.data || []));
+        nextUrl = payload.next_page_url || null;
+    }
+
+    return items;
 }
 
 function renderGrid() {

@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Beverage;
+use App\Models\FoodItem;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => view('home'))->name('home');
@@ -8,7 +10,15 @@ Route::get('/contact', fn () => view('contact'))->name('contact');
 
 Route::get('/login', fn () => view('auth.login'))->name('login');
 Route::get('/register', fn () => view('auth.register'))->name('register');
-Route::middleware('admin')->get('/admin', fn () => view('admin.dashboard'))->name('admin.dashboard');
+Route::get('/admin', fn () => view('admin.dashboard'))->name('admin.dashboard');
+Route::get('/admin/users', fn () => view('admin.management', ['page' => 'users']))->name('admin.users');
+Route::get('/admin/food-items', fn () => view('admin.management', ['page' => 'food']))->name('admin.food-items');
+Route::get('/admin/beverages', fn () => view('admin.management', ['page' => 'beverages']))->name('admin.beverages');
+Route::get('/admin/categories', fn () => view('admin.management', ['page' => 'categories']))->name('admin.categories');
+Route::get('/admin/orders', fn () => view('admin.management', ['page' => 'orders']))->name('admin.orders');
+Route::get('/admin/customers', fn () => view('admin.management', ['page' => 'customers']))->name('admin.customers');
+Route::get('/admin/statistics', fn () => view('admin.statistics'))->name('admin.statistics');
+Route::get('/admin/ai', fn () => view('admin.ai'))->name('admin.ai');
 
 // menu
 Route::get('/menu', fn () => view('menu'))->name('menu');
@@ -16,8 +26,8 @@ Route::get('/menu/{type}/{id}', function (string $type, int $id) {
     abort_unless(in_array($type, ['food', 'beverage'], true), 404);
 
     $item = $type === 'food'
-        ? \App\Models\FoodItem::with('category')->find($id)
-        : \App\Models\Beverage::with('category')->find($id);
+        ? FoodItem::with('category')->find($id)
+        : Beverage::with('category')->find($id);
 
     abort_if(! $item, 404);
 
