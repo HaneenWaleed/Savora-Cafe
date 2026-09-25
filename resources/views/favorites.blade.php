@@ -73,56 +73,44 @@
 
 @push('scripts')
     <script>
-        const API_BASE = '/api';
-
-        function getToken() {
-            return localStorage.getItem('savora_token') || '';
-        }
-
-        function authHeaders(json = true) {
-            const headers = { Accept: 'application/json' };
-            if (json) headers['Content-Type'] = 'application/json';
-            if (getToken()) headers['Authorization'] = `Bearer ${getToken()}`;
-            return headers;
-        }
-
-        function showToast(message) {
-            let toast = document.querySelector('.savora-toast');
-            if (!toast) {
-                toast = document.createElement('div');
-                toast.className = 'savora-toast';
-                document.body.appendChild(toast);
-            }
-            toast.textContent = message;
-            requestAnimationFrame(() => toast.classList.add('show'));
-            setTimeout(() => toast.classList.remove('show'), 2500);
-        }
-
         document.addEventListener('DOMContentLoaded', async () => {
+            if (!isLoggedIn()) {
+                requireLogin();
+                return;
+            }
+
             const favoritesGrid = document.getElementById('favoritesGrid');
             const recommendedList = document.getElementById('recommendedList');
+            const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80';
 
             const resolveFavoriteProduct = (item = {}) => {
-                const source = item.product || item.item || item;
-                const productType = item.favorable_type || source?.type || 'food';
-                const productId = Number(item.favorable_id || source?.id ?? item?.id ?? 0);
-                const productType = source?.type || item?.type || 'food';
-                const productId = Number(source?.id ?? item?.id ?? 0);
-                const merged = {
-                    ...(source || {}),
-                    ...(item || {}),
-                };
+                const source = item.item || item.product || item;
+                const productType = item.type || source?.type || 'food';
+                const productId = Number(item.favorable_id ?? source?.id ?? 0);
+                const merged = { ...(source || {}), ...(item || {}) };
 
                 return {
                     ...merged,
-                    id: Number(item?.favorable_id ?? productId ?? 0),
+                    id: productId,
                     type: productType,
                     name: merged.name || source?.name || 'Saved item',
                     price: Number(merged.price ?? source?.price ?? 0),
-                    image: merged.image || merged.image_url || source?.image || source?.image_url || item?.image || item?.image_url || 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80',
+                    image: merged.image || merged.image_url || source?.image || source?.image_url || FALLBACK_IMAGE,
                     description: merged.description || source?.description || 'Your saved food favorite.',
                     category: merged.category || source?.category || { name: 'Favorite' },
                 };
+            };
+
+            const loadFavorites = async () => {
+                try {
+                    const response = await fetch(`${API_BASE}/favorites`, { headers: authHeaders() });
+                    if (!response.ok) return [];
+                    const data = await response.json();
+                    return Array.isArray(data.data) ? data.data : [];
+                } catch (error) {
+                    console.error('Failed to load favorites:', error);
+                    return [];
+                }
             };
 
             const renderFavorites = (items = []) => {
@@ -134,117 +122,77 @@
                             <a href="/menu" class="btn btn-savora">Explore the menu</a>
                         </div>
                     `;
-                    recommendedList.innerHTML = `
-                        <li class="empty-state">
-                            <p>We’ll suggest dishes here as soon as your favorite items are available.</p>
-                        </li>
-                    `;
+                    if (recommendedList) {
+                        recommendedList.innerHTML = `
+                            <li class="empty-state">
+                                <p>We'll suggest dishes here as soon as your favorite items are available.</p>
+                            </li>
+                        `;
+                    }
                     return;
                 }
 
                 favoritesGrid.innerHTML = items.map((item) => {
                     const product = resolveFavoriteProduct(item);
-                    const image = product.image || 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80';
-
                     return `
                         <article class="favorite-card">
-                            <div class="favorite-image" style="background-image:url('${image}')"></div>
+                            <div class="favorite-image" style="background-image:url('${product.image}')"></div>
                             <div class="favorite-body">
                                 <div class="fav-head">
-                                    <h3>${product.name || 'Saved item'}</h3>
+                                    <h3>${product.name}</h3>
                                     <button type="button" class="favorite-heart active" data-product-type="${product.type}" data-product-id="${product.id}" aria-label="Remove from favorites">
                                         <i class="bi bi-heart-fill"></i>
                                     </button>
                                 </div>
                                 <div class="food-meta">
                                     <span>${product.category?.name || 'Favorite'}</span>
-                                    <strong>${Number(product.price || 0)} EGP</strong>
+                                    <strong>${product.price} EGP</strong>
                                 </div>
-                                <p>${product.description || 'Your saved food favorite.'}</p>
+                                <p>${product.description}</p>
                             </div>
                         </article>
                     `;
                 }).join('');
 
-                recommendedList.innerHTML = items.slice(0, 3).map((item) => {
-                    const product = resolveFavoriteProduct(item);
-                    const image = product.image || 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=400&q=80';
-
-                    return `
-                        <li>
-                            <img src="${image}" alt="${product.name || 'Favorite item'}">
-                            <div>
-                                <strong>${product.name || 'Favorite item'}</strong>
-                                <small>${Number(product.price || 0)} EGP</small>
-                                <span>Based on your tastes</span>
-                            </div>
-                        </li>
-                    `;
-                }).join('');
+                if (recommendedList) {
+                    recommendedList.innerHTML = items.slice(0, 3).map((item) => {
+                        const product = resolveFavoriteProduct(item);
+                        return `
+                            <li>
+                                <img src="${product.image}" alt="${product.name}">
+                                <div>
+                                    <strong>${product.name}</strong>
+                                    <small>${product.price} EGP</small>
+                                    <span>Based on your tastes</span>
+                                </div>
+                            </li>
+                        `;
+                    }).join('');
+                }
 
                 favoritesGrid.querySelectorAll('.favorite-heart').forEach((button) => {
                     button.addEventListener('click', async () => {
                         const type = button.dataset.productType;
                         const id = Number(button.dataset.productId || 0);
-
                         if (!type || !id) return;
 
                         try {
                             const response = await fetch(`${API_BASE}/favorites/${type}/${id}`, {
                                 method: 'DELETE',
-                                headers: authHeaders(),
+                                headers: authHeaders(false),
                             });
                             if (!response.ok) throw new Error('Failed to remove favorite');
-                            const newFavorites = await loadFavorites();
-                            renderFavorites(newFavorites);
                             showToast('Removed from favorites');
+                            renderFavorites(await loadFavorites());
                         } catch (error) {
                             console.error('Failed to remove favorite:', error);
                             showToast('Could not remove favorite.');
-                        }
-                        if (!type || !id) {
-                            return;
-                        }
-                        const response = await fetch(`/api/favorites/${type}/${id}`, { method: 'DELETE', headers: authHeaders(false) });
-                        if (response.ok) {
-                            await syncFavoritesView();
-                            showToast('Removed from favorites.');
                         }
                     });
                 });
             };
 
-            const loadFavorites = async () => {
-                try {
-                    const response = await fetch(`${API_BASE}/favorites`, { headers: authHeaders() });
-                    const data = response.ok ? await response.json() : { data: [] };
-                    return Array.isArray(data.data) ? data.data : [];
-                } catch (error) {
-                    console.error('Failed to load favorites:', error);
-                    return [];
-                }
-            };
-
-            const syncFavoritesView = async () => {
-                try {
-                    const favorites = await loadFavorites();
-                    renderFavorites(favorites);
-                    if (!isLoggedIn()) {
-                        renderFavorites([]);
-                        return;
-                    }
-                    const response = await fetch('/api/favorites', { headers: authHeaders(false) });
-                    if (!response.ok) {
-                        throw new Error('Unable to load favorites');
-                    }
-                    const payload = await response.json();
-                    renderFavorites(payload.data || []);
-                } catch (error) {
-                    renderFavorites([]);
-                }
-            };
-
-            await syncFavoritesView();
+            renderFavorites(await loadFavorites());
         });
     </script>
 @endpush

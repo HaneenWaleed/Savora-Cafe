@@ -198,7 +198,7 @@
             const loader = document.getElementById('pageLoader');
             if (!loader) return;
 
-            const MIN_LOADER_TIME = 2000; // بالميلي ثانية (ثانيتين)
+            const MIN_LOADER_TIME = 2000;  
             const elapsed = performance.now();
             const remaining = Math.max(0, MIN_LOADER_TIME - elapsed);
 
