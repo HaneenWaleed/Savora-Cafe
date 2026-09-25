@@ -56,10 +56,18 @@
                 <a href="{{ route('menu') }}" class="view-link">View all <i class="bi bi-arrow-right"></i></a>
             </div>
 
-            <div class="featured-grid" id="featuredGrid"></div>
+            <div class="featured-slider-wrap">
+                <button type="button" class="featured-arrow" data-direction="prev" aria-label="Previous items">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <div class="featured-track" id="featuredGrid"></div>
+                <button type="button" class="featured-arrow" data-direction="next" aria-label="Next items">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
         </section>
 
-        <section class="recommendation-block reveal">
+        <!-- <section class="recommendation-block reveal">
             <div class="ai-spotlight">
                 <div class="ai-spotlight-icon"><i class="bi bi-robot"></i></div>
                 <div>
@@ -70,6 +78,17 @@
             </div>
 
             <div class="recommendation-grid" id="homeRecommendationGrid"></div>
+        </section> -->
+        <section class="ai-intro-block reveal">
+            <div class="ai-intro-icon"><i class="bi bi-robot"></i></div>
+            <div class="ai-intro-copy">
+                <span class="mini-label">Powered by AI</span>
+                <h3>Savora uses artificial intelligence to understand your taste</h3>
+                <p>
+                    Our AI learns from your preferences, favorite flavors, and past orders to suggest meals and drinks that fit you best.
+                </p>
+            </div>
+            <a href="{{ route('menu') }}" class="chat-link">Chat with AI <i class="bi bi-arrow-right"></i></a>
         </section>
 
         <section class="why-choose-block reveal">

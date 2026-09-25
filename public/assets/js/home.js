@@ -11,14 +11,39 @@ const CATEGORY_ICONS = {
     'cold-drinks': 'bi-snow2',
 };
 
+// document.addEventListener('DOMContentLoaded', async () => {
+//     const categoryGrid = document.getElementById('homeCategoryGrid');
+//     const featuredGrid = document.getElementById('featuredGrid');
+//     const recommendationGrid = document.getElementById('homeRecommendationGrid');
+//     const statsGrid = document.getElementById('statsGrid');
+//     const heroSlider = document.getElementById('heroSlider');
+
+//     if (!categoryGrid || !featuredGrid || !recommendationGrid || !statsGrid) {
+//         return;
+//     }
+
+//     try {
+//         const { categories, items } = await loadHomeData();
+
+//         renderCategories(categories);
+//         renderHeroSlider(items);
+//         renderFeatured(items);
+//         renderRecommendations(items);
+//         renderStats(categories, items);
+//     } catch (error) {
+//         return;
+//     }
+
+//     bindHeroSlider();
+// });
+
+
 document.addEventListener('DOMContentLoaded', async () => {
     const categoryGrid = document.getElementById('homeCategoryGrid');
     const featuredGrid = document.getElementById('featuredGrid');
-    const recommendationGrid = document.getElementById('homeRecommendationGrid');
     const statsGrid = document.getElementById('statsGrid');
-    const heroSlider = document.getElementById('heroSlider');
 
-    if (!categoryGrid || !featuredGrid || !recommendationGrid || !statsGrid) {
+    if (!categoryGrid || !featuredGrid || !statsGrid) {
         return;
     }
 
@@ -28,20 +53,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderCategories(categories);
         renderHeroSlider(items);
         renderFeatured(items);
-        renderRecommendations(items);
         renderStats(categories, items);
     } catch (error) {
         return;
     }
 
     bindHeroSlider();
+    bindFeaturedSlider();
 });
+
 
 async function loadHomeData() {
     const [categoriesResponse, foodResponse, beverageResponse] = await Promise.all([
         fetch(`${API_BASE}/categories`),
-        fetch(`${API_BASE}/food-items?per_page=8&sort=newest`),
-        fetch(`${API_BASE}/beverages?per_page=8&sort=newest`),
+        fetch(`${API_BASE}/food-items?per_page=10&sort=newest`),
+        fetch(`${API_BASE}/beverages?per_page=10&sort=newest`),
     ]);
     const categoriesData = categoriesResponse.ok ? await categoriesResponse.json() : { data: [] };
     const foodData = foodResponse.ok ? await foodResponse.json() : { data: [] };
@@ -49,7 +75,7 @@ async function loadHomeData() {
     const categories = Array.isArray(categoriesData.data) ? categoriesData.data : [];
     const food = Array.isArray(foodData.data) ? foodData.data.map((item) => ({ ...item, type: 'food' })) : [];
     const beverages = Array.isArray(beverageData.data) ? beverageData.data.map((item) => ({ ...item, type: 'beverage' })) : [];
-    return { categories: categories.slice(0, 8), items: [...food, ...beverages].slice(0, 8) };
+    return { categories: categories.slice(0, 8), items: [...food, ...beverages].slice(0, 10) };
 }
 
 function renderCategories(categories) {
@@ -162,16 +188,16 @@ function bindHeroSlider() {
 }
 
 function renderFeatured(items) {
-    const grid = document.getElementById('featuredGrid');
-    if (!grid) return;
+    const track = document.getElementById('featuredGrid');
+    if (!track) return;
 
     if (!items.length) {
-        grid.innerHTML = '<div class="empty-state">No featured items available</div>';
+        track.innerHTML = '<div class="empty-state">No featured items available</div>';
         return;
     }
 
-    grid.innerHTML = items.slice(0, 4).map((item) => `
-        <article class="menu-item-card reveal">
+    track.innerHTML = items.map((item) => `
+        <article class="menu-item-card">
             <div class="image-wrap">
                 ${item.image_url ? `<img src="${item.image_url}" alt="${escapeHtml(item.name)}">` : `<div class="placeholder-img"><i class="bi bi-basket2"></i></div>`}
                 <span class="pill">${escapeHtml(item.category?.name || item.type || 'Featured')}</span>
@@ -196,33 +222,50 @@ function renderFeatured(items) {
     bindHomeActions();
 }
 
-function renderRecommendations(items) {
-    const grid = document.getElementById('homeRecommendationGrid');
-    if (!grid) return;
+// function renderRecommendations(items) {
+//     const grid = document.getElementById('homeRecommendationGrid');
+//     if (!grid) return;
 
-    if (!items.length) {
-        grid.innerHTML = '<div class="empty-state">No recommendations available</div>';
-        return;
-    }
+//     if (!items.length) {
+//         grid.innerHTML = '<div class="empty-state">No recommendations available</div>';
+//         return;
+//     }
 
-    grid.innerHTML = items.slice(0, 4).map((item, index) => `
-        <article class="menu-item-card reveal" style="animation-delay:${index * 60}ms">
-            <div class="image-wrap">
-                ${item.image_url ? `<img src="${item.image_url}" alt="${escapeHtml(item.name)}">` : `<div class="placeholder-img"><i class="bi bi-basket2"></i></div>`}
-                <span class="pill">${(Math.max(92, 100 - index * 4))}% Match</span>
-            </div>
-            <div class="content">
-                <div class="title-row">
-                    <h3>${escapeHtml(item.name)}</h3>
-                    <span class="price">${Number(item.price || 0).toFixed(0)} EGP</span>
-                </div>
-                <div class="meta">
-                    <span class="rating"><i class="bi bi-stars"></i> AI pick</span>
-                    <span>${item.type === 'beverage' ? 'Drink' : 'Food'}</span>
-                </div>
-            </div>
-        </article>
-    `).join('');
+//     grid.innerHTML = items.slice(0, 4).map((item, index) => `
+//         <article class="menu-item-card reveal" style="animation-delay:${index * 60}ms">
+//             <div class="image-wrap">
+//                 ${item.image_url ? `<img src="${item.image_url}" alt="${escapeHtml(item.name)}">` : `<div class="placeholder-img"><i class="bi bi-basket2"></i></div>`}
+//                 <span class="pill">${(Math.max(92, 100 - index * 4))}% Match</span>
+//             </div>
+//             <div class="content">
+//                 <div class="title-row">
+//                     <h3>${escapeHtml(item.name)}</h3>
+//                     <span class="price">${Number(item.price || 0).toFixed(0)} EGP</span>
+//                 </div>
+//                 <div class="meta">
+//                     <span class="rating"><i class="bi bi-stars"></i> AI pick</span>
+//                     <span>${item.type === 'beverage' ? 'Drink' : 'Food'}</span>
+//                 </div>
+//             </div>
+//         </article>
+//     `).join('');
+// }
+
+function bindFeaturedSlider() {
+    const track = document.getElementById('featuredGrid');
+    const arrows = document.querySelectorAll('.featured-arrow');
+    if (!track || !arrows.length) return;
+
+    arrows.forEach((button) => {
+        button.addEventListener('click', () => {
+            const card = track.querySelector('.menu-item-card');
+            const step = card ? card.offsetWidth + 20 : 280;
+            track.scrollBy({
+                left: button.dataset.direction === 'next' ? step : -step,
+                behavior: 'smooth',
+            });
+        });
+    });
 }
 
 function renderStats(categories, items) {

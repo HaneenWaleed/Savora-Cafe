@@ -212,8 +212,12 @@ async function loadRecommendations() {
             state.matchMap[`${item.type}_${item.id}`] = matchPercentage;
             return { item, match_percentage: matchPercentage };
         });
-        const section = document.getElementById('recommendedSection');
-        if (section && list.length) section.classList.remove('d-none');
+                const section = document.getElementById('recommendedSection');
+        if (section && list.length) {
+            section.classList.remove('d-none');
+            section.classList.add('reveal');
+            observeReveal();
+        }
         if (list.length) renderRecommendedList(list);
     } catch (error) {
         console.error('Failed to load recommendations:', error);
@@ -250,10 +254,17 @@ function buildRecommendedCard(item, matchPercent) {
             <div class="price">${item.price} EGP</div>
         </div>
     `;
+
     card.querySelector('.rec-heart').addEventListener('click', (e) => {
         e.stopPropagation();
         toggleFavorite(item.type, item.id, e.currentTarget);
     });
+
+    card.addEventListener('click', (e) => {
+        if (e.target.closest('button')) return;
+        window.location.href = `/menu/${item.type}/${item.id}`;
+    });
+
     return card;
 }
 

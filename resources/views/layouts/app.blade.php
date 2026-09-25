@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Savora Cafeteria')</title>
-    <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('assets/images/logo-icon.png') }}">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,6 +18,11 @@
 </head>
 <body class="@yield('body_class')">
 
+    <!-- loading -->
+    <div id="pageLoader" class="page-loader">
+        <img src="{{ asset('assets/images/logo-icon.png') }}" alt="Savora" class="loader-logo">
+        <div class="loader-spinner"></div>
+    </div>
     <header class="site-header reveal">
         <div class="header-inner">
             <button type="button" class="mobile-menu-btn" id="mobileMenuBtn">
@@ -187,5 +192,21 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ asset('assets/js/common.js') }}?v={{ filemtime(public_path('assets/js/common.js')) }}"></script>
     @stack('scripts')
+
+    <script>
+        window.addEventListener('load', () => {
+            const loader = document.getElementById('pageLoader');
+            if (!loader) return;
+
+            const MIN_LOADER_TIME = 2000; // بالميلي ثانية (ثانيتين)
+            const elapsed = performance.now();
+            const remaining = Math.max(0, MIN_LOADER_TIME - elapsed);
+
+            setTimeout(() => {
+                loader.classList.add('hide');
+                setTimeout(() => loader.remove(), 500);
+            }, remaining);
+        });
+    </script>
 </body>
 </html>
