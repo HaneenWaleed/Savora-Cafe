@@ -127,6 +127,9 @@
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="mb-0">Our Menu</h5>
                     <small class="text-muted" id="resultsCount">Loading...</small>
+                    <button type="button" id="backToAllItems" class="btn-clear d-none">
+                        <i class="bi bi-arrow-left"></i> Back to all items
+                    </button>
                 </div>
 
                 <div class="menu-grid" id="menuGrid"></div>

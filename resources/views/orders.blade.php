@@ -115,7 +115,7 @@
                     return;
                 }
 
-                ordersList.innerHTML = orders.map((order) => {
+                                ordersList.innerHTML = orders.map((order) => {
                     const items = Array.isArray(order.items) ? order.items : [];
                     const firstItem = items[0];
                     const itemName = firstItem?.name || 'Savora order';
@@ -128,12 +128,15 @@
                     const payment = (order.payment_status || 'pending').toString();
 
                     return `
-                        <div class="cart-item">
+                        <div class="cart-item" data-order-id="${order.id}">
                             <div class="cart-image" style="background-image:url('${image}')"></div>
                             <div class="cart-details">
                                 <div class="cart-header">
                                     <h3>Order #${order.id}</h3>
                                     <span class="dot-badge ${status.toLowerCase()}">${status}</span>
+                                    <button type="button" class="order-delete-btn" data-delete-order="${order.id}" aria-label="Delete order">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 </div>
                                 <p>${itemName} · ${items.length} items · Total ${total.toFixed(2)} USD</p>
                                 <div class="cart-actions">
@@ -146,7 +149,31 @@
                         </div>
                     `;
                 }).join('');
+
+                ordersList.querySelectorAll('[data-delete-order]').forEach((button) => {
+                    button.addEventListener('click', async () => {
+                        const orderId = button.dataset.deleteOrder;
+                        if (!confirm('Are you sure you want to delete this order? This cannot be undone.')) return;
+
+                        try {
+                            const response = await fetch(`/api/orders/${orderId}`, {
+                                method: 'DELETE',
+                                headers: authHeaders(false),
+                            });
+                            if (!response.ok) throw new Error('Failed to delete order');
+
+                            showToast('Order deleted.');
+                            const response2 = await fetch('/api/orders', { headers: authHeaders() });
+                            const payload = await response2.json();
+                            renderOrders(payload.data || []);
+                        } catch (error) {
+                            console.error(error);
+                            showToast('Unable to delete this order.');
+                        }
+                    });
+                });
             };
+
 
             try {
                 const response = await fetch('/api/orders', { headers: authHeaders() });

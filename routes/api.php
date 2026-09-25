@@ -69,6 +69,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('orders', [OrderController::class, 'store']);
     Route::get('orders/{order}', [OrderController::class, 'show']);
     Route::post('orders/{order}/cancel', [OrderController::class, 'cancel']);
+    Route::delete('orders/{order}', [OrderController::class, 'destroy']);
 
     // Chatbot
     Route::post('chatbot/ask', [ChatbotController::class, 'ask'])->middleware('throttle:15,1');

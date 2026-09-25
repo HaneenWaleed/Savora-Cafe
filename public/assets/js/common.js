@@ -172,3 +172,11 @@ document.getElementById('chatbotSend')?.addEventListener('click', sendChatbotMes
 document.getElementById('chatbotInput')?.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') { event.preventDefault(); sendChatbotMessage(); }
 });
+
+window.addEventListener('pageshow', (event) => {
+    if (!event.persisted) return;
+    document.querySelectorAll('.modal.show').forEach((modalEl) => {
+        const instance = bootstrap.Modal.getInstance(modalEl);
+        instance?.hide();
+    });
+});

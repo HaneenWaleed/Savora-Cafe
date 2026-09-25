@@ -394,19 +394,67 @@
                     .join("") ||
                 '<div class="admin-empty">No category data available.</div>';
     }
-    async function askAi(input, result) {
+    // async function askAi(input, result) {
+    //     const value = input?.value.trim();
+    //     if (!value) return;
+    //     result.innerHTML = '<div class="bot-answer"><i class="bi bi-robot"></i><span>Thinking...</span></div>';
+    //     try {
+    //         const payload = await request("/api/chatbot/ask", {
+    //             method: "POST",
+    //             body: JSON.stringify({ message: value }),
+    //         });
+    //         const answer = (payload.reply || payload.message || "No answer available.").replace(/\n/g, '<br>');
+    //         result.innerHTML = `<div class="bot-answer"><i class="bi bi-robot"></i><span>${answer}</span></div>`;
+    //     } catch (error) {
+    //         result.innerHTML = `<div class="bot-answer"><i class="bi bi-robot"></i><span>${error.message}</span></div>`;
+    //     }
+    // }
+        function appendChatBubble(container, role, text) {
+        const bubble = document.createElement('div');
+        bubble.className = `admin-chat-bubble admin-chat-bubble-${role}`;
+        bubble.innerHTML = `
+            <div class="admin-chat-avatar"><i class="bi ${role === 'user' ? 'bi-person-fill' : 'bi-stars'}"></i></div>
+            <div class="admin-chat-text"></div>
+        `;
+        bubble.querySelector('.admin-chat-text').textContent = text;
+        container.appendChild(bubble);
+        container.scrollTop = container.scrollHeight;
+        return bubble;
+    }
+
+    function appendTypingBubble(container) {
+        const bubble = document.createElement('div');
+        bubble.className = 'admin-chat-bubble admin-chat-bubble-ai admin-chat-bubble-typing';
+        bubble.innerHTML = `
+            <div class="admin-chat-avatar"><i class="bi bi-stars"></i></div>
+            <div class="admin-chat-text"><span></span><span></span><span></span></div>
+        `;
+        container.appendChild(bubble);
+        container.scrollTop = container.scrollHeight;
+        return bubble;
+    }
+
+    async function askAi(input, messages, sendButton) {
         const value = input?.value.trim();
         if (!value) return;
-        result.textContent = "Thinking...";
+
+        appendChatBubble(messages, 'user', value);
+        input.value = '';
+        input.style.height = 'auto';
+        sendButton.disabled = true;
+
+        const typingBubble = appendTypingBubble(messages);
+
         try {
-            const payload = await request("/api/chatbot/ask", {
-                method: "POST",
-                body: JSON.stringify({ message: value }),
-            });
-            result.textContent =
-                payload.reply || payload.message || "No answer available.";
+            const payload = await request('/api/chatbot/ask', { method: 'POST', body: JSON.stringify({ message: value }) });
+            typingBubble.remove();
+            appendChatBubble(messages, 'ai', payload.reply || payload.message || 'No answer available.');
         } catch (error) {
-            result.textContent = error.message;
+            typingBubble.remove();
+            appendChatBubble(messages, 'ai', error.message || 'Something went wrong.');
+        } finally {
+            sendButton.disabled = false;
+            input.focus();
         }
     }
 
@@ -675,14 +723,27 @@
                 month: "short",
                 day: "numeric",
             }));
-    document
-        .getElementById("adminAiAsk")
-        ?.addEventListener("click", () =>
-            askAi(
-                document.getElementById("adminAiInput"),
-                document.getElementById("adminAiResult"),
-            ),
-        );
+        const adminAiForm = document.getElementById("adminAiForm");
+    const adminAiInput = document.getElementById("adminAiInput");
+    const adminAiMessages = document.getElementById("adminAiMessages");
+    const adminAiAskBtn = document.getElementById("adminAiAsk");
+
+    adminAiForm?.addEventListener("submit", (event) => {
+        event.preventDefault();
+        askAi(adminAiInput, adminAiMessages, adminAiAskBtn);
+    });
+
+    adminAiInput?.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            askAi(adminAiInput, adminAiMessages, adminAiAskBtn);
+        }
+    });
+
+    adminAiInput?.addEventListener("input", () => {
+        adminAiInput.style.height = "auto";
+        adminAiInput.style.height = `${Math.min(adminAiInput.scrollHeight, 120)}px`;
+    });
     (async () => {
         if (!token) return (window.location.href = "/login");
         try {

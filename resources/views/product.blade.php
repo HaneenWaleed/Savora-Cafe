@@ -326,7 +326,7 @@
                 `).join('');
             }
 
-            function loadCompareOptions() {
+            async function loadCompareOptions() {
                 if (!compareSelect) return;
 
                 const [foodResponse, beverageResponse] = await Promise.all([fetch('/api/food-items?per_page=50'), fetch('/api/beverages?per_page=50')]);

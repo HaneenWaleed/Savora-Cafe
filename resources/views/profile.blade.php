@@ -3,7 +3,7 @@
 @section('title', 'Profile - Savora Cafeteria')
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/css/account.css') }}">
+<link rel="stylesheet" href="{{ asset('assets/css/account.css') }}?v={{ filemtime(public_path('assets/css/account.css')) }}">
 @endpush
 
 @section('content')
@@ -91,15 +91,15 @@
             <section class="stats-grid">
                 <article class="stat-card">
                     <div class="stat-icon"><i class="bi bi-bag-check"></i></div>
-                    <div class="stat-value">{{ $ordersCount }}</div>
+                    <div class="stat-value" id="statOrdersCount">{{ $ordersCount }}</div>
                     <div class="stat-label">Total Orders</div>
                 </article>
 
-                <article class="stat-card">
-                    <div class="stat-icon"><i class="bi bi-heart"></i></div>
-                    <div class="stat-value">{{ $favoriteCount }}</div>
-                    <div class="stat-label">Favorite Items</div>
-                </article>
+            <article class="stat-card">
+                <div class="stat-icon"><i class="bi bi-heart"></i></div>
+                <div class="stat-value stat-value-sm" id="statFavoritesCount">{{ $favoriteCount }}</div>
+                <div class="stat-label">Favorite Items</div>
+            </article>
 
                 <article class="stat-card">
                     <div class="stat-icon"><i class="bi bi-calendar3"></i></div>
@@ -134,7 +134,7 @@
                             <i class="bi bi-person-vcard"></i>
                             <h2>Personal Information</h2>
                         </div>
-                        <button type="button" class="mini-edit">Edit</button>
+                        <button type="button" class="mini-edit" id="editPersonalInfoBtn">Edit</button>
                     </div>
 
                     <div class="info-row">
@@ -188,7 +188,7 @@
                         <i class="bi bi-heart-fill"></i>
                         <h2>Food Preferences</h2>
                     </div>
-                    <button type="button" class="mini-edit">Edit</button>
+                    <a href="{{ route('preferences') }}" class="mini-edit">Edit</a>
                 </div>
 
                 <div class="tags-block" data-preference-group="favorite_categories">
@@ -235,7 +235,7 @@
                             <i class="bi bi-emoji-smile"></i>
                             <h2>Dietary Preferences</h2>
                         </div>
-                        <button type="button" class="mini-edit">Edit</button>
+                        <a href="{{ route('preferences') }}" class="mini-edit">Edit</a>
                     </div>
 
                     <div class="tag-row" id="dietaryPreferencesList">
@@ -251,7 +251,7 @@
                             <i class="bi bi-wallet2"></i>
                             <h2>Price Preference</h2>
                         </div>
-                        <button type="button" class="mini-edit">Edit</button>
+                        <a href="{{ route('preferences') }}" class="mini-edit">Edit</a>
                     </div>
 
                     <div class="price-pref" id="pricePreferenceBox">
@@ -274,7 +274,7 @@
                         <i class="bi bi-egg-fried"></i>
                         <h2>Favorite Ingredients</h2>
                     </div>
-                    <button type="button" class="mini-edit">Edit</button>
+                    <a href="{{ route('preferences') }}" class="mini-edit">Edit</a>
                 </div>
 
                 <div class="tag-row" id="favoriteIngredientsList">
@@ -290,7 +290,7 @@
                         <i class="bi bi-slash-circle"></i>
                         <h2>Disliked Ingredients</h2>
                     </div>
-                    <button type="button" class="mini-edit">Edit</button>
+                    <a href="{{ route('preferences') }}" class="mini-edit">Edit</a>
                 </div>
 
                 <div class="tag-row" id="dislikedIngredientsList">
@@ -393,6 +393,11 @@
         document.addEventListener('DOMContentLoaded', async function () {
             const modalEl = document.getElementById('editProfileModal');
             const modal = modalEl ? new bootstrap.Modal(modalEl) : null;
+            window.addEventListener('pageshow', (event) => {
+                if (event.persisted && modal) {
+                    modal.hide();
+                }
+            });
             const form = document.getElementById('editProfileForm');
             const errorBox = document.getElementById('profileUpdateErrors');
 
@@ -490,13 +495,34 @@
                     avatar.innerHTML = '<span>' + initials + '</span>';
                 }
 
-                if (form) {
+                                if (form) {
                     form.querySelector('#editProfileName').value = user.name || '';
                     form.querySelector('#editProfileEmail').value = user.email || '';
                     form.querySelector('#editProfilePhone').value = user.phone || '';
                     form.querySelector('#editProfileAge').value = user.age || '';
                 }
             };
+
+            const hydrateStats = async () => {
+                try {
+                    const favoritesRes = await fetch('/api/favorites', { headers: authHeaders() });
+                    if (favoritesRes.ok) {
+                        const favoritesData = await favoritesRes.json();
+                        const favoritesCount = Array.isArray(favoritesData.data) ? favoritesData.data.length : 0;
+                        setText('#statFavoritesCount', favoritesCount);
+                    }
+
+                    const ordersRes = await fetch('/api/orders', { headers: authHeaders() });
+                    if (ordersRes.ok) {
+                        const ordersData = await ordersRes.json();
+                        const ordersCount = ordersData.meta?.total ?? 0;
+                        setText('#statOrdersCount', ordersCount);
+                    }
+                } catch (error) {
+                    // Keep server-rendered values on failure
+                }
+            };
+            
 
             const hydratePreferences = async () => {
                 try {
@@ -521,11 +547,22 @@
                 }
             });
 
-            document.querySelectorAll('.edit-btn, .mini-edit').forEach((button) => {
-                button.addEventListener('click', () => {
-                    modal?.show();
-                });
-            });
+            document.querySelectorAll('.edit-btn').forEach((button) => {
+    button.addEventListener('click', () => {
+        modal?.show();
+    });
+});
+
+document.getElementById('editPersonalInfoBtn')?.addEventListener('click', () => {
+    modal?.show();
+});
+
+document.querySelectorAll('.mini-edit').forEach((button) => {
+    if (button.id === 'editPersonalInfoBtn') return;
+    button.addEventListener('click', () => {
+        window.location.href = '/preferences';
+    });
+});
 
             form?.addEventListener('submit', async (event) => {
                 event.preventDefault();
@@ -569,6 +606,7 @@
             });
 
             await hydrateProfile();
+            await hydrateStats();
             await hydratePreferences();
         });
     </script>

@@ -91,4 +91,15 @@ class OrderController extends Controller
             'order'   => new OrderResource($order->fresh()->load('items.orderable')),
         ]);
     }
+
+        public function destroy(Request $request, int $order): JsonResponse
+        {
+            $order = $request->user()->orders()->findOrFail($order);
+            $order->delete();
+
+            return response()->json([
+                'message' => 'Order deleted.',
+            ]);
+        }
+
 }

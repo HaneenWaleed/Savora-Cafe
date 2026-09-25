@@ -16,6 +16,7 @@ const state = {
     favoritesSet: new Set(),
     cartMap: {},
     itemsByKey: {},
+    showRecommendedOnly: false,
 };
 
 const PLACEHOLDER_ICON = { food: 'bi-egg-fried', beverage: 'bi-cup-straw' };
@@ -212,7 +213,7 @@ async function loadRecommendations() {
             state.matchMap[`${item.type}_${item.id}`] = matchPercentage;
             return { item, match_percentage: matchPercentage };
         });
-                const section = document.getElementById('recommendedSection');
+        const section = document.getElementById('recommendedSection');
         if (section && list.length) {
             section.classList.remove('d-none');
             section.classList.add('reveal');
@@ -276,6 +277,7 @@ document.getElementById('recNext')?.addEventListener('click', () => {
 });
 document.getElementById('viewAllRecommended')?.addEventListener('click', () => {
     state.sort = 'match_desc';
+    state.showRecommendedOnly = true;
     loadMenu();
     document.querySelector('.our-menu-section')?.scrollIntoView({ behavior: 'smooth' });
 });
@@ -385,6 +387,7 @@ function resetFilters() {
     state.availableOnly = false;
     state.sort = 'newest';
     state.page = 1;
+    state.showRecommendedOnly = false;
 
     document.getElementById('headerSearch').value = '';
     const mobileSearch = document.getElementById('headerSearchMobile');
@@ -409,6 +412,10 @@ function debounce(fn, delay) {
 }
 
 async function loadMenu() {
+    if (state.categoryId || state.search || state.spicyLevel !== '' || state.maxCalories || state.availableOnly || (state.minPrice > 0) || (state.maxPrice < 100000)) {
+        state.showRecommendedOnly = false;
+    }
+
     document.getElementById('resultsCount').textContent = 'Loading...';
     const query = new URLSearchParams({
         per_page: '50',
@@ -428,38 +435,42 @@ async function loadMenu() {
         .flat();
     let merged = [...items];
 
-        if (state.type) merged = merged.filter((item) => item.type === state.type);
-        if (state.categoryId) merged = merged.filter((item) => Number(item.category?.id) === Number(state.categoryId));
+    if (state.type) merged = merged.filter((item) => item.type === state.type);
+    if (state.categoryId) merged = merged.filter((item) => Number(item.category?.id) === Number(state.categoryId));
 
-        if (state.search) {
-            const query = state.search.toLowerCase();
-            merged = merged.filter((item) => item.name.toLowerCase().includes(query) || (item.description || '').toLowerCase().includes(query));
-        }
+    if (state.search) {
+        const query = state.search.toLowerCase();
+        merged = merged.filter((item) => item.name.toLowerCase().includes(query) || (item.description || '').toLowerCase().includes(query));
+    }
 
-        merged = merged.filter((item) => Number(item.price) >= Number(state.minPrice));
-        merged = merged.filter((item) => Number(item.price) <= Number(state.maxPrice));
+    merged = merged.filter((item) => Number(item.price) >= Number(state.minPrice));
+    merged = merged.filter((item) => Number(item.price) <= Number(state.maxPrice));
 
-        if (state.spicyLevel !== '') {
-            merged = merged.filter((item) => item.type === 'food' && Number(item.spicy_level || 0) === Number(state.spicyLevel));
-        }
+    if (state.spicyLevel !== '') {
+        merged = merged.filter((item) => item.type === 'food' && Number(item.spicy_level || 0) === Number(state.spicyLevel));
+    }
 
-        if (state.maxCalories) {
-            merged = merged.filter((item) => Number(item.calories || 0) <= Number(state.maxCalories));
-        }
+    if (state.maxCalories) {
+        merged = merged.filter((item) => Number(item.calories || 0) <= Number(state.maxCalories));
+    }
 
-        if (state.availableOnly) {
-            merged = merged.filter((item) => item.is_available !== false && item.quantity > 0);
-        }
+    if (state.availableOnly) {
+        merged = merged.filter((item) => item.is_available !== false && item.quantity > 0);
+    }
 
-        if (state.sort === 'match_desc') {
-            merged.sort((a, b) => (state.matchMap[itemKey(b)] || 0) - (state.matchMap[itemKey(a)] || 0));
-        } else if (state.sort === 'name') {
-            merged.sort((a, b) => a.name.localeCompare(b.name));
-        } else if (state.sort === 'price_asc') {
-            merged.sort((a, b) => a.price - b.price);
-        } else if (state.sort === 'price_desc') {
-            merged.sort((a, b) => b.price - a.price);
-        }
+    if (state.showRecommendedOnly) {
+        merged = merged.filter((item) => Object.prototype.hasOwnProperty.call(state.matchMap, itemKey(item)));
+    }
+
+    if (state.sort === 'match_desc') {
+        merged.sort((a, b) => (state.matchMap[itemKey(b)] || 0) - (state.matchMap[itemKey(a)] || 0));
+    } else if (state.sort === 'name') {
+        merged.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (state.sort === 'price_asc') {
+        merged.sort((a, b) => a.price - b.price);
+    } else if (state.sort === 'price_desc') {
+        merged.sort((a, b) => b.price - a.price);
+    }
 
     state.allItems = merged;
     renderGrid();
@@ -486,6 +497,8 @@ async function fetchAllPages(endpoint) {
 function renderGrid() {
     const grid = document.getElementById('menuGrid');
     const noResults = document.getElementById('noResults');
+    const backBtn = document.getElementById('backToAllItems');
+    if (backBtn) backBtn.classList.toggle('d-none', !state.showRecommendedOnly);
     const total = state.allItems.length;
     const totalPages = Math.max(1, Math.ceil(total / state.perPage));
     if (state.page > totalPages) state.page = totalPages;
@@ -635,3 +648,12 @@ function renderPagination(totalPages) {
 function scrollToGrid() {
     document.querySelector('.our-menu-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
+
+
+document.getElementById('backToAllItems')?.addEventListener('click', () => {
+    state.showRecommendedOnly = false;
+    state.sort = 'newest';
+    document.getElementById('sortBy').value = 'newest';
+    state.page = 1;
+    loadMenu();
+});
