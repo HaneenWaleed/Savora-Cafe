@@ -112,3 +112,63 @@ document.getElementById('aiQuerySubmit')?.addEventListener('click', async () => 
 const revealObserver = new IntersectionObserver((entries) => entries.forEach((entry) => { if (entry.isIntersecting) { entry.target.classList.add('is-visible'); revealObserver.unobserve(entry.target); } }), { threshold: 0.12 });
 function observeReveal(root = document) { root.querySelectorAll('.reveal:not(.is-visible)').forEach((element) => revealObserver.observe(element)); }
 document.addEventListener('DOMContentLoaded', () => { refreshHeader(); observeReveal(); });
+
+
+// ---------- Chatbot Modal ----------
+document.querySelectorAll('[data-open-chatbot]').forEach((link) => {
+    link.addEventListener('click', (event) => {
+        event.preventDefault();
+        if (!isLoggedIn()) { requireLogin(); return; }
+        const modal = document.getElementById('chatbotModal');
+        if (modal) new bootstrap.Modal(modal).show();
+    });
+});
+
+function appendChatBubble(text, sender) {
+    const wrap = document.getElementById('chatbotMessages');
+    if (!wrap) return;
+    const bubble = document.createElement('div');
+    bubble.className = `chatbot-bubble ${sender}`;
+    bubble.textContent = text;
+    wrap.appendChild(bubble);
+    wrap.scrollTop = wrap.scrollHeight;
+}
+
+async function sendChatbotMessage() {
+    const input = document.getElementById('chatbotInput');
+    const button = document.getElementById('chatbotSend');
+    const message = input?.value.trim();
+    if (!message) return;
+
+    appendChatBubble(message, 'user');
+    input.value = '';
+    button.disabled = true;
+    button.querySelector('.btn-label').classList.add('d-none');
+    button.querySelector('.spinner-border').classList.remove('d-none');
+
+    try {
+        const response = await fetch(`${API_BASE}/chatbot/ask`, {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({ message }),
+        });
+        const payload = await response.json();
+
+        if (!response.ok) {
+            appendChatBubble(payload.message || 'Something went wrong. Please try again.', 'bot');
+        } else {
+            appendChatBubble(payload.reply, 'bot');
+        }
+    } catch (error) {
+        appendChatBubble('Cannot connect to the server.', 'bot');
+    } finally {
+        button.disabled = false;
+        button.querySelector('.btn-label').classList.remove('d-none');
+        button.querySelector('.spinner-border').classList.add('d-none');
+    }
+}
+
+document.getElementById('chatbotSend')?.addEventListener('click', sendChatbotMessage);
+document.getElementById('chatbotInput')?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') { event.preventDefault(); sendChatbotMessage(); }
+});

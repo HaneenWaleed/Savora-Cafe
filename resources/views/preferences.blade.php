@@ -26,7 +26,7 @@
                     <i class="bi bi-sliders"></i>
                     <span>Preferences</span>
                 </a>
-                <a href="#" class="side-link">
+                <a href="#" class="side-link" data-open-chatbot>
                     <i class="bi bi-robot"></i>
                     <span>AI Chatbot</span>
                 </a>

@@ -159,6 +159,31 @@
         </div>
     </div>
 
+        <div class="modal fade" id="chatbotModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content ask-ai-modal chatbot-modal">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title"><i class="bi bi-robot me-2"></i>Savora AI Chatbot</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="chatbotMessages" class="chatbot-messages">
+                        <div class="chatbot-bubble bot">
+                            Hi! Ask me anything about the menu, your orders, or get a recommendation. 🍽️
+                        </div>
+                    </div>
+                    <div class="input-group mt-3">
+                        <input type="text" id="chatbotInput" class="form-control" placeholder="Type your message...">
+                        <button class="btn btn-savora" id="chatbotSend">
+                            <span class="btn-label"><i class="bi bi-send"></i></span>
+                            <span class="spinner-border spinner-border-sm d-none"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ asset('assets/js/common.js') }}?v={{ filemtime(public_path('assets/js/common.js')) }}"></script>
     @stack('scripts')
