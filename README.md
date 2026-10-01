@@ -279,27 +279,14 @@ Developed as a graduation project during **ITI Summer Training**.
 **Team Members:**
 
 * Haneen Walid
-* [Team Member Name]
-
-**Instructor:**
-
-* [Instructor Name]
-
----
-
-## 📸 Screenshots
-
-Screenshots and project demonstrations can be added here.
+* habibaelkholy978-bot
 
 ---
 
 ## 🔗 Links
 
 **GitHub Repository:**
-YOUR_REPOSITORY_URL
-
-**Project Demo:**
-YOUR_DEMO_URL
+ https://github.com/HaneenWaleed/Savora-Cafe
 
 ---
 
