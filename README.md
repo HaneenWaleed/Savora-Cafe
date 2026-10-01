@@ -1,58 +1,308 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🍽️ Savora Cafeteria
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+**Savora** is a cafeteria management system built as a graduation project during my **ITI Summer Training** in Backend Development with PHP.
 
-## About Laravel
+The project was developed to provide a complete experience for both **customers and administrators**, including menu browsing, ordering, favorites, customer preferences, AI-powered recommendations, and a role-based AI chatbot.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 📌 About The Project
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Savora was developed as a practical application of the backend concepts and technologies learned during the training.
 
-## Learning Laravel
+The system focuses on:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+* Managing cafeteria menu items and categories
+* Handling customer orders
+* Managing customer preferences and favorites
+* Providing personalized food recommendations
+* Offering an AI chatbot with role-based access
+* Providing an admin dashboard for managing the system
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+The project was developed within a short deadline of approximately **one week**, which made time management, problem-solving, and teamwork important parts of the development process.
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+---
 
-## Agentic Development
+## ✨ Features
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+### 👤 Authentication & Roles
 
-```bash
-composer require laravel/boost --dev
+* User authentication
+* Customer and Admin roles
+* Role-based authorization
+* Protected admin functionality
 
-php artisan boost:install
+### 🍔 Menu Management
+
+* Browse food and beverage items
+* Organize items into categories
+* Admin CRUD operations for menu items
+* Admin category management
+
+### 🛒 Orders
+
+* Create and manage customer orders
+* Order items and quantities
+* Order management from the admin side
+* Customer order history
+
+### ❤️ Favorites
+
+* Add and remove favorite menu items
+* Manage customer favorites
+
+### ⚙️ Customer Preferences
+
+Customers can provide preferences such as:
+
+* Food categories
+* Food types
+* Beverage preferences
+* Taste preferences
+* Dietary preferences
+* Price range
+* Spicy level
+* Ingredients
+
+These preferences are used to provide more personalized recommendations.
+
+### 🤖 AI Recommendations
+
+Savora provides personalized food recommendations based on the customer's stored preferences and menu data.
+
+### 💬 AI Chatbot
+
+The system includes an AI-powered chatbot with **role-based access**.
+
+The chatbot can interact with the available system data according to the authenticated user's permissions, while restricting access to information that the user is not authorized to view.
+
+### 📊 Admin Dashboard
+
+The admin can:
+
+* Manage users
+* Manage menu items
+* Manage categories
+* Manage orders
+* View statistics
+* Access customer-related information according to the system permissions
+
+---
+
+## 🛠️ Technologies Used
+
+### Backend
+
+* **PHP**
+* **Laravel**
+* **MySQL**
+
+### Frontend
+
+* **HTML5**
+* **CSS3**
+* **JavaScript**
+* **Bootstrap**
+
+### AI
+
+* AI API integration for:
+
+  * Recommendations
+  * Chatbot
+
+---
+
+## 🏗️ Project Structure
+
+The project follows the Laravel MVC architecture:
+
+```text
+Savora/
+├── app/
+│   ├── Http/
+│   ├── Models/
+│   └── ...
+├── database/
+│   ├── migrations/
+│   ├── seeders/
+│   └── factories/
+├── public/
+├── resources/
+│   ├── views/
+│   ├── css/
+│   └── js/
+├── routes/
+│   ├── web.php
+│   └── api.php
+├── .env.example
+└── ...
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+---
 
-## Contributing
+## 🚀 Getting Started
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Prerequisites
 
-## Code of Conduct
+Make sure you have the following installed:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+* PHP
+* Composer
+* MySQL
+* Laravel
+* Node.js & npm
 
-## Security Vulnerabilities
+### Installation
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Clone the repository:
 
-## License
+```bash
+git clone YOUR_REPOSITORY_URL
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Navigate to the project directory:
+
+```bash
+cd Savora
+```
+
+Install PHP dependencies:
+
+```bash
+composer install
+```
+
+Install frontend dependencies:
+
+```bash
+npm install
+```
+
+Create the environment file:
+
+```bash
+cp .env.example .env
+```
+
+Generate the application key:
+
+```bash
+php artisan key:generate
+```
+
+Configure your database credentials in `.env`.
+
+Then run the migrations and seeders:
+
+```bash
+php artisan migrate --seed
+```
+
+Build the frontend assets:
+
+```bash
+npm run build
+```
+
+Finally, start the Laravel development server:
+
+```bash
+php artisan serve
+```
+
+The application will be available at:
+
+```text
+http://127.0.0.1:8000
+```
+
+---
+
+## 🔐 Environment Variables
+
+The project uses environment variables for configuration and sensitive credentials.
+
+Make sure to configure your `.env` file with your database settings and AI API key.
+
+**Never commit your actual `.env` file or API keys to GitHub.**
+
+Example:
+
+```env
+APP_NAME=Savora
+
+DB_DATABASE=your_database
+DB_USERNAME=your_username
+DB_PASSWORD=your_password
+
+AI_API_KEY=your_api_key
+```
+
+---
+
+## 🎨 Design
+
+Savora uses a warm and natural visual identity built around:
+
+* Cream
+* Terracotta
+* Green
+* Brown
+
+The interface was designed from scratch rather than relying on a ready-made template, with a focus on creating a distinctive cafeteria experience.
+
+---
+
+## 🧠 Challenges & What I Learned
+
+Working on Savora helped me apply backend concepts in a complete project rather than isolated exercises.
+
+Some of the main challenges included:
+
+* Working with a very short deadline
+* Building the project without a ready-made template
+* Designing and implementing the UI while developing the backend
+* Implementing authentication and role-based authorization
+* Connecting the application with AI services
+* Handling customer preferences and personalized recommendations
+* Working as a team under time constraints
+
+One small but memorable challenge was the project logo. The initial AI-generated logo lost quality when resized, so I redesigned it using **Adobe Illustrator** as a vector logo to ensure it remained sharp at different sizes.
+
+---
+
+## 👩‍💻 Team
+
+Developed as a graduation project during **ITI Summer Training**.
+
+**Team Members:**
+
+* Haneen Walid
+* [Team Member Name]
+
+**Instructor:**
+
+* [Instructor Name]
+
+---
+
+## 📸 Screenshots
+
+Screenshots and project demonstrations can be added here.
+
+---
+
+## 🔗 Links
+
+**GitHub Repository:**
+YOUR_REPOSITORY_URL
+
+**Project Demo:**
+YOUR_DEMO_URL
+
+---
+
+## 📄 License
+
+This project was developed for educational and training purposes as part of the ITI Summer Training.
